@@ -4,14 +4,14 @@ level: task
 title: "Build job-hunter-setup skill and shared ingestion/analysis helpers"
 short_code: "JOBHUN-T-0002"
 created_at: 2026-07-31T00:21:14.046129+00:00
-updated_at: 2026-07-31T00:21:14.046129+00:00
+updated_at: 2026-07-31T00:26:15.241273+00:00
 parent: JOBHUN-I-0002
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -33,6 +33,10 @@ reuse: an ingestion helper (resume/cover ingestion + rotation-strategy capture) 
 resume-analysis helper (review resume text → propose target job types). This is core
 architecture: downstream skills reuse these patterns, so the interfaces must be clean
 and stable.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
