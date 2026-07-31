@@ -202,10 +202,32 @@ schema; it is advisory context, not machine state.
 Optionally also generate an empty `jobs/jobs.md` header so the folder is complete;
 downstream skills regenerate it from `jobs.json`.
 
-### Step 10 — Report
+### Step 10 — Browser and login preflight
+
+Because every search and application runs by driving the user's own logged-in Chrome,
+verify that connection now so search/apply do not fail later. Follow the reusable
+procedure in [`../../references/browser-preflight.md`](../../references/browser-preflight.md)
+(cite it; do not duplicate). Run it against the boards in `config.sites` (the value just
+written in Step 9):
+
+1. Confirm the claude-in-chrome browser is connected; if not, walk the user through
+   installing Chrome (preferred) and the Claude-in-Chrome extension, verifying after they
+   confirm and looping until connected.
+2. For each board in `config.sites` that needs a login (`linkedin`, `indeed`,
+   `glassdoor`), confirm a logged-in account; if not logged in, give the user the login
+   link to click in the terminal, wait for them to sign in, and re-verify. `generic`
+   needs no login check.
+3. Loop until every chosen board is reachable and logged in, or the user explicitly
+   **skips** a board.
+
+If the user skips a board, offer to remove it from `config.sites` so search/apply do not
+attempt it, and record the skip for the final report. Do not silently drop a board.
+
+### Step 11 — Report
 
 Confirm to the user what was created, list the files written and their location, and
-tell them they can now run the search/apply skills. Remind them they can re-run setup
+include the preflight summary (which boards are reachable/logged in, and any skipped).
+Tell them they can now run the search/apply skills. Remind them they can re-run setup
 any time to update settings (it will enter update mode).
 
 ## Files this skill reads and writes
