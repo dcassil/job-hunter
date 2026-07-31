@@ -4,14 +4,14 @@ level: task
 title: "Make find-jobs registry-driven with design-gating"
 short_code: "JOBHUN-T-0016"
 created_at: 2026-07-31T02:35:59.439395+00:00
-updated_at: 2026-07-31T02:35:59.439395+00:00
+updated_at: 2026-07-31T02:44:36.032220+00:00
 parent: JOBHUN-I-0006
 blocked_by: [JOBHUN-T-0015]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0006
 Update `skills/find-jobs/SKILL.md` so its site selection and dispatch are driven by the
 board registry (`references/job-boards.md`), including resume-aware design-gating and
 adapter-else-generic routing.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

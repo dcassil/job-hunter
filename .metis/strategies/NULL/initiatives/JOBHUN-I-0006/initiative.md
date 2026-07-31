@@ -4,14 +4,14 @@ level: initiative
 title: "Expanded job-board coverage and resume-aware suggestion"
 short_code: "JOBHUN-I-0006"
 created_at: 2026-07-31T02:34:31.467789+00:00
-updated_at: 2026-07-31T02:37:28.673612+00:00
+updated_at: 2026-07-31T02:44:53.951959+00:00
 parent: JOBHUN-V-0001
 blocked_by: [JOBHUN-I-0003]
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
