@@ -52,39 +52,57 @@ Do not proceed to Step 2 until a browser is connected (or the user stops setup).
 ## Step 2 — Confirm a logged-in account per target board
 
 Run this for each board in the target list (the caller passes it; in setup it is
-`config.sites`). `generic` needs no login check — skip it and note it as "no login
-required".
+`config.sites`). Do not hardcode a fixed set of boards — drive every board off the
+[board registry](job-boards.md). For each board, look up its **login URL** and **access
+notes** columns there.
 
-For each board that needs a login (`linkedin`, `indeed`, `glassdoor`):
+For each board in the target list:
 
-1. Open the board's home/jobs page in a new tab (`tabs_create_mcp` + `navigate`) and
+1. **Determine whether the board needs a login check** from its registry login URL:
+   - **Login URL is `none`** (e.g. the remote boards `we-work-remotely` and `remoteok`,
+     plus `google-jobs`, `aiga`, `authentic-jobs`), **and `generic`**: skip the login
+     check and note it as "no login required". If that board has an access note (e.g.
+     `aiga` membership-gated detail), surface the note so the user knows a wall may
+     appear, then continue.
+   - **Login URL is a real URL:** run the logged-in check below.
+2. Open the board's home/jobs page in a new tab (`tabs_create_mcp` + `navigate`) and
    read it (`read_page` / `get_page_text`).
-2. **Heuristically determine whether the user is logged in:**
+3. **Heuristically determine whether the user is logged in:**
    - Logged in: an account/avatar/profile menu is present, or the page shows
      personalized content, and there is no prominent "Sign in" / "Join now" wall.
    - Not logged in: a sign-in / join wall or a "Sign in" button dominates.
    - **When ambiguous, ask the user to confirm** rather than guessing.
-3. **If logged in:** report "✓ <board>: logged in" and move to the next board.
-4. **If not logged in:** print the login URL for the user to click in the terminal and
-   ask them to sign in **in their browser**, then tell you when done:
-   - LinkedIn: `https://www.linkedin.com/login`
-   - Indeed: `https://secure.indeed.com/account/login`
-   - Glassdoor: `https://www.glassdoor.com/profile/login_input.htm`
-
+4. **If logged in:** report "✓ <board>: logged in" and move to the next board.
+5. **If not logged in:** print that board's registry login URL for the user to click in
+   the terminal and ask them to sign in **in their browser**, then tell you when done.
    Say: **"Open this link and sign in, then tell me when you're logged in."** Do not
    enter credentials yourself.
-5. When the user confirms, reload the board page and re-run the check in step 2. If still
-   not logged in, report what you see and repeat. Loop until logged in, or the user
-   chooses to **skip** this board.
+6. **Surface access quirks from the registry note** and let the user proceed-if-they-have-
+   access or skip, rather than forcing a login you cannot achieve:
+   - **Third-party login** (e.g. `behance` signs in via an Adobe ID): tell the user the
+     login is via that provider and give them the registry login URL.
+   - **Curated / invite-style membership** (e.g. `working-not-working`): tell the user
+     the board may be browsable but applying can require accepted membership; let them
+     proceed if they already have access, otherwise skip.
+   - **Account-required** (e.g. `wellfound` requires an account, some roles need a
+     completed profile): surface the note; let the user proceed if they have access,
+     else skip.
+7. When the user confirms a login, reload the board page and re-run the check from step 3.
+   If still not logged in, report what you see and repeat. Loop until logged in (or
+   confirmed accessible), or the user chooses to **skip** this board.
 
 ## Step 3 — Report
 
 Summarize the outcome for every target board:
 
 - `✓ reachable & logged in` — ready to use.
+- `✓ reachable, no login required` — boards whose registry login URL is `none`, and
+  `generic`.
 - `⊘ skipped by user` — the user opted out; note that search/apply will exclude it.
-- `no login required` — for `generic`.
+
+Note any access quirks that were surfaced (curated/invite, third-party login,
+account-required, membership-gated detail) so the caller and user know what to expect.
 
 Return this summary to the caller so it can record skips and decide whether to continue.
-Everything that is not skipped must be reachable and logged in before browser-dependent
-work (search/apply) runs.
+Everything that is not skipped must be reachable (and logged in where the board requires
+it) before browser-dependent work (search/apply) runs.

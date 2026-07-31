@@ -4,14 +4,14 @@ level: task
 title: "Extend contract enums and author the board registry"
 short_code: "JOBHUN-T-0015"
 created_at: 2026-07-31T02:35:52.667830+00:00
-updated_at: 2026-07-31T02:35:52.667830+00:00
+updated_at: 2026-07-31T02:40:55.177520+00:00
 parent: JOBHUN-I-0006
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0006
 Foundation for expanded coverage: extend the `source`/`sites` enums with all new board
 ids, update the contract docs, and author `references/job-boards.md` — the registry that
 every downstream skill reads. Owned by the orchestrator (touches guarded schema files).
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
