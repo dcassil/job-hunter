@@ -41,7 +41,25 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["linkedin", "indeed", "glassdoor", "generic"]
+        "enum": [
+          "linkedin",
+          "indeed",
+          "glassdoor",
+          "ziprecruiter",
+          "google-jobs",
+          "monster",
+          "careerbuilder",
+          "wellfound",
+          "dribbble",
+          "behance",
+          "aiga",
+          "coroflot",
+          "working-not-working",
+          "authentic-jobs",
+          "we-work-remotely",
+          "remoteok",
+          "generic"
+        ]
       }
     }
   }

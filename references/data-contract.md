@@ -80,14 +80,15 @@ but the fields below are the contract.
 | `round_robin_pointer` | integer | No | Index (≥ 0) of the next variant to use in round-robin rotation. |
 | `remote_pref` | string enum | Yes | One of `remote`, `local`, `both`. |
 | `automation_default` | string enum | Yes | One of `ask`, `auto`, `human`. Default answer to the per-run automated-vs-human prompt. |
-| `sites` | array of string enum | Yes | Each item is one of `linkedin`, `indeed`, `glassdoor`, `generic`. |
+| `sites` | array of string enum | Yes | Each item is a board id from the [board registry](job-boards.md) (e.g. `linkedin`, `indeed`, `glassdoor`, `ziprecruiter`, …, `generic`). The schema enum is the authoritative closed set. |
 
 Enum values, copied verbatim:
 
 - `resume_strategy`: `single`, `round-robin`, `domain`, `both`
 - `remote_pref`: `remote`, `local`, `both`
 - `automation_default`: `ask`, `auto`, `human`
-- `sites` items: `linkedin`, `indeed`, `glassdoor`, `generic`
+- `sites` items: any board id in `config.schema.json`'s `sites` enum — see the
+  [board registry](job-boards.md) for the full set and each board's meaning
 
 `automation_default` encodes the human-in-control principle: `ask` prompts every
 run, `auto` submits without prompting, and `human` always defers final submission
@@ -169,7 +170,7 @@ JSON **array**; each element is a job object that forbids additional properties
 | `location` | string or null | No | Location string, or `null`. |
 | `remote` | string enum or null | No | One of `remote`, `hybrid`, `onsite`, or `null`. |
 | `url` | string (uri) | Yes | Canonical job URL. |
-| `source` | string enum | Yes | One of `linkedin`, `indeed`, `glassdoor`, `generic`. |
+| `source` | string enum | Yes | The board id the listing came from — a value from the [board registry](job-boards.md) (`linkedin`, `indeed`, `glassdoor`, `ziprecruiter`, …, `generic`). The schema enum is the authoritative set. |
 | `posted` | string or null | No | When the job was posted, or `null`. |
 | `found_at` | string | Yes | When this row was discovered. |
 | `status` | string enum | Yes | See [Status enum and transitions](#status-enum-and-transitions). |
@@ -181,7 +182,8 @@ JSON **array**; each element is a job object that forbids additional properties
 Enum values, copied verbatim:
 
 - `remote`: `remote`, `hybrid`, `onsite`, `null`
-- `source`: `linkedin`, `indeed`, `glassdoor`, `generic`
+- `source`: any board id in `jobs.schema.json`'s `source` enum — see the
+  [board registry](job-boards.md)
 - `status`: `new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`
 
 See [`../schemas/examples/jobs.example.json`](../schemas/examples/jobs.example.json).

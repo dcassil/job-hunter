@@ -4,7 +4,7 @@ level: task
 title: "Add browser-connectivity and login preflight to setup"
 short_code: "JOBHUN-T-0014"
 created_at: 2026-07-31T02:30:20.969800+00:00
-updated_at: 2026-07-31T02:31:23.048752+00:00
+updated_at: 2026-07-31T02:32:57.550804+00:00
 parent: 
 blocked_by: []
 archived: false
@@ -12,7 +12,7 @@ archived: false
 tags:
   - "#task"
   - "#feature"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -52,6 +52,8 @@ confirmation, and re-verify. Loop until everything is reachable and logged in.
 
 Make the procedure a reusable reference so `find-jobs` and `apply-to-jobs` can adopt it
 later, and cite it from the setup skill.
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

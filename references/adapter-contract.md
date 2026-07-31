@@ -59,7 +59,7 @@ Each adapter returns exactly one envelope to `find-jobs`:
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `source` | string enum | The adapter's fixed source: `linkedin`, `indeed`, `glassdoor`, or `generic`. |
+| `source` | string enum | The board id the adapter searched — a value from the [board registry](job-boards.md) / the `source` enum in the jobs schema. A dedicated adapter uses its fixed id (e.g. `linkedin`); the generic adapter uses the id of the board it was seeded with (see [Routing](#routing-dedicated-vs-generic)), falling back to `generic`. |
 | `status` | string enum | `ok`, `no_results`, or `blocked` (see [Graceful degradation](#graceful-degradation)). |
 | `listings` | array | Zero or more **listing objects** (below). Empty when `status` is `no_results` or `blocked`. |
 | `message` | string or null | Human-readable note for the run summary (e.g. why it was blocked). `null` when unremarkable. |
@@ -95,11 +95,25 @@ Adapters MUST NOT emit `status`, `found_at`, `resume_used`, `cover_used`, or
 re-discovered posting reset a user's pipeline progress; setting lifecycle state is
 the sink's exclusive job.
 
+### Routing: dedicated vs generic
+
+`find-jobs` supports many boards (see the [board registry](job-boards.md)) without a
+dedicated adapter for each. For each selected board:
+
+- If a dedicated `search-<id>` adapter exists (currently `linkedin`, `indeed`,
+  `glassdoor`), dispatch it; it stamps its fixed `source`.
+- Otherwise dispatch `search-generic-site` **seeded** with that board's search-URL
+  template, login URL, and access notes from the registry. When seeded for a specific
+  board, the generic adapter stamps that board's id as `source` (e.g. `ziprecruiter`),
+  not `generic`. It only stamps `generic` when searching an off-registry board or a
+  user-pasted source.
+
 ### Stable id and source
 
-- `source` is fixed per adapter: `search-linkedin` → `linkedin`,
-  `search-indeed` → `indeed`, `search-glassdoor` → `glassdoor`,
-  `search-generic-site` → `generic`.
+- `source` for a dedicated adapter is fixed: `search-linkedin` → `linkedin`,
+  `search-indeed` → `indeed`, `search-glassdoor` → `glassdoor`. For the generic adapter,
+  `source` is the seeded board id (per [Routing](#routing-dedicated-vs-generic)), else
+  `generic`.
 - `id` follows the data contract: `<source>-<native-id-or-hash>`.
   - Prefer the board's own posting id: `linkedin-3891`, `indeed-1024`,
     `glassdoor-77120`.
