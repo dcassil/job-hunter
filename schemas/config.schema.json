@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://job-hunter/schemas/config.schema.json",
+  "title": "job-hunter config",
+  "description": "Working-folder preferences written by setup and read by all skills.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["working_dir", "resume_strategy", "remote_pref", "automation_default", "sites"],
+  "properties": {
+    "working_dir": {
+      "type": "string",
+      "description": "Absolute path to the working folder that contains this config."
+    },
+    "resume_strategy": {
+      "type": "string",
+      "enum": ["single", "round-robin", "domain", "both"]
+    },
+    "resume_domains": {
+      "type": "object",
+      "description": "Maps a resume/cover variant id (e.g. 'resume-a') to the domains it targets.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "round_robin_pointer": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Index of the next variant to use in round-robin rotation."
+    },
+    "remote_pref": {
+      "type": "string",
+      "enum": ["remote", "local", "both"]
+    },
+    "automation_default": {
+      "type": "string",
+      "enum": ["ask", "auto", "human"],
+      "description": "Default answer to the per-run automated-vs-human prompt."
+    },
+    "sites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["linkedin", "indeed", "glassdoor", "generic"]
+      }
+    }
+  }
+}

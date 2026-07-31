@@ -1,0 +1,34 @@
+[
+  {
+    "id": "linkedin-3891",
+    "title": "Senior Frontend Engineer",
+    "company": "Acme Corp",
+    "location": "Remote (US)",
+    "remote": "remote",
+    "url": "https://www.linkedin.com/jobs/view/3891",
+    "source": "linkedin",
+    "posted": "2026-07-28",
+    "found_at": "2026-07-30",
+    "status": "new",
+    "resume_used": null,
+    "cover_used": null,
+    "applied_at": null,
+    "notes": ""
+  },
+  {
+    "id": "indeed-1024",
+    "title": "Platform Engineer",
+    "company": "Globex",
+    "location": "Austin, TX",
+    "remote": "hybrid",
+    "url": "https://www.indeed.com/viewjob?jk=1024",
+    "source": "indeed",
+    "posted": null,
+    "found_at": "2026-07-30",
+    "status": "applied",
+    "resume_used": "resume-b",
+    "cover_used": "cover-b",
+    "applied_at": "2026-07-30",
+    "notes": "Applied via company portal."
+  }
+]

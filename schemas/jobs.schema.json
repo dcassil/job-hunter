@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://job-hunter/schemas/jobs.schema.json",
+  "title": "job-hunter jobs list",
+  "description": "Canonical structured job list. jobs.md is a generated human-readable mirror.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "title", "company", "url", "source", "found_at", "status"],
+    "properties": {
+      "id": { "type": "string", "description": "Stable id, e.g. 'linkedin-3891...'." },
+      "title": { "type": "string" },
+      "company": { "type": "string" },
+      "location": { "type": ["string", "null"] },
+      "remote": {
+        "type": ["string", "null"],
+        "enum": ["remote", "hybrid", "onsite", null]
+      },
+      "url": { "type": "string", "format": "uri" },
+      "source": {
+        "type": "string",
+        "enum": ["linkedin", "indeed", "glassdoor", "generic"]
+      },
+      "posted": { "type": ["string", "null"] },
+      "found_at": { "type": "string" },
+      "status": {
+        "type": "string",
+        "enum": ["new", "applied", "interviewing", "offer", "skipped", "rejected"]
+      },
+      "resume_used": { "type": ["string", "null"] },
+      "cover_used": { "type": ["string", "null"] },
+      "applied_at": { "type": ["string", "null"] },
+      "notes": { "type": "string" }
+    }
+  }
+}

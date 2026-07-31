@@ -1,0 +1,12 @@
+{
+  "working_dir": "/Users/example/job-hunter",
+  "resume_strategy": "both",
+  "resume_domains": {
+    "resume-a": ["frontend", "react"],
+    "resume-b": ["platform", "infrastructure"]
+  },
+  "round_robin_pointer": 0,
+  "remote_pref": "both",
+  "automation_default": "ask",
+  "sites": ["linkedin", "indeed", "glassdoor"]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "job-hunter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Claude Code plugin: search and manage a job hunt across LinkedIn, Indeed, Glassdoor and other boards.",
+  "scripts": {
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#.metis\"",
+    "lint:js": "eslint .",
+    "format:check": "prettier --check \"**/*.{json,mjs}\"",
+    "format": "prettier --write \"**/*.{json,mjs}\"",
+    "validate:schemas": "node scripts/validate-schemas.mjs",
+    "validate:skills": "node scripts/validate-skills.mjs",
+    "validate:plugin": "node scripts/validate-plugin.mjs",
+    "check": "npm run validate:plugin && npm run validate:schemas && npm run validate:skills && npm run lint:js && npm run lint:md && npm run format:check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0",
+    "markdownlint-cli2": "^0.14.0",
+    "prettier": "^3.3.3"
+  }
+}

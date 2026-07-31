@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://job-hunter/schemas/profile.schema.json",
+  "title": "job-hunter profile",
+  "description": "Reusable applicant answers. Written once, reused across every application.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["demographics", "logged_questions"],
+  "properties": {
+    "demographics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gender",
+        "ethnicity",
+        "veteran",
+        "disability",
+        "work_authorized",
+        "needs_sponsorship"
+      ],
+      "properties": {
+        "gender": { "type": "string" },
+        "ethnicity": { "type": "string" },
+        "veteran": { "type": "string" },
+        "disability": { "type": "string" },
+        "work_authorized": { "type": "boolean" },
+        "needs_sponsorship": { "type": "boolean" }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "description": "Optional contact fields reused on application forms.",
+      "additionalProperties": true
+    },
+    "logged_questions": {
+      "type": "array",
+      "description": "Application questions not covered above, accumulated for reuse.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["question", "answered"],
+        "properties": {
+          "question": { "type": "string" },
+          "answer": { "type": ["string", "null"] },
+          "source_job": { "type": ["string", "null"] },
+          "answered": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

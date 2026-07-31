@@ -1,0 +1,28 @@
+{
+  "demographics": {
+    "gender": "prefer-not-to-say",
+    "ethnicity": "prefer-not-to-say",
+    "veteran": "no",
+    "disability": "prefer-not-to-say",
+    "work_authorized": true,
+    "needs_sponsorship": false
+  },
+  "contact": {
+    "full_name": "Example Applicant",
+    "email": "example@example.com"
+  },
+  "logged_questions": [
+    {
+      "question": "Are you willing to relocate?",
+      "answer": "Yes, for the right role.",
+      "source_job": "linkedin-3891",
+      "answered": true
+    },
+    {
+      "question": "Desired salary?",
+      "answer": null,
+      "source_job": "indeed-1024",
+      "answered": false
+    }
+  ]
+}
