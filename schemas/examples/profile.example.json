@@ -9,7 +9,8 @@
   },
   "contact": {
     "full_name": "Example Applicant",
-    "email": "example@example.com"
+    "email": "example@example.com",
+    "portfolio_url": "https://example.github.io"
   },
   "logged_questions": [
     {

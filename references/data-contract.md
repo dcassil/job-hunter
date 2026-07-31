@@ -125,7 +125,9 @@ Top-level fields:
 | `needs_sponsorship` | boolean | Whether the applicant needs visa sponsorship. |
 
 `contact` is an open object (`additionalProperties: true`) for fields reused on
-application forms, such as `full_name` and `email`. It is optional.
+application forms. It is optional. Recommended well-known keys: `portfolio_url`
+(personal portfolio / personal website URL, reused on "website"/"portfolio" fields),
+`full_name`, `email`, `phone`, and `linkedin_url`.
 
 `logged_questions` items (forbid additional properties):
 

@@ -29,8 +29,18 @@
     },
     "contact": {
       "type": "object",
-      "description": "Optional contact fields reused on application forms.",
-      "additionalProperties": true
+      "description": "Optional contact fields reused on application forms. Open shape; the listed properties are the recommended, well-known keys.",
+      "additionalProperties": true,
+      "properties": {
+        "full_name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "portfolio_url": {
+          "type": "string",
+          "description": "Personal portfolio / personal website URL, reused on application forms and 'website' fields."
+        },
+        "linkedin_url": { "type": "string" }
+      }
     },
     "logged_questions": {
       "type": "array",

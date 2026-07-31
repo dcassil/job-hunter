@@ -121,8 +121,13 @@ each (e.g. `prefer-not-to-say`). You need all six of these for `profile.json`:
 - `work_authorized` (boolean — are they authorized to work?)
 - `needs_sponsorship` (boolean — do they need visa sponsorship?)
 
-Optionally also collect basic `contact` fields (e.g. `full_name`, `email`) if the
-user wants them reused on forms. Contact is optional.
+Then collect the reusable `contact` fields that applications routinely ask for so no
+skill has to re-ask them later. Always ask for a **portfolio / personal website URL**
+(`portfolio_url`) — many applications have a "website" or "portfolio" field, and
+having it on file lets apply-to-jobs fill it automatically. Also offer the other
+well-known contact fields (`full_name`, `email`, `phone`, `linkedin_url`). Every
+contact field is optional; let the user decline any of them. Store whatever the user
+provides under `profile.json.contact`.
 
 ### Step 8 — Review resume and confirm job focus
 
@@ -198,7 +203,9 @@ properties; required keys: `demographics`, `logged_questions`):
 - `demographics` (object, all six keys required, no others): `gender`, `ethnicity`,
   `veteran`, `disability` (strings), `work_authorized`, `needs_sponsorship`
   (booleans) — from Step 7.
-- `contact` (object, optional, open shape): only if collected in Step 7.
+- `contact` (object, optional, open shape): whatever was collected in Step 7.
+  Recommended well-known keys: `portfolio_url` (personal portfolio/website),
+  `full_name`, `email`, `phone`, `linkedin_url`. Omit any the user declined.
 - `logged_questions` (array): initialize to `[]` on fresh setup. Each future item is
   `{ "question": string, "answer": string|null, "source_job": string|null,
   "answered": boolean }`. In update mode, preserve the existing array.

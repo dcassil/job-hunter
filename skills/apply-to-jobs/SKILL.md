@@ -143,8 +143,9 @@ For each field on the application form, resolve its value through the question l
 1. **Structured demographics/contact.** If the field maps to a
    `profile.demographics` field (`gender`, `ethnicity`, `veteran`, `disability`,
    `work_authorized`, `needs_sponsorship`) or a present `profile.contact` field (e.g.
-   `full_name`, `email`), fill it from there directly. These are answerable without
-   asking — fill them and do not log them.
+   `full_name`, `email`, `phone`, `linkedin_url`, or `portfolio_url` for
+   "website"/"portfolio" fields), fill it from there directly. These are answerable
+   without asking — fill them and do not log them.
 2. **Logged questions.** Normalize the question text per the
    [reuse-key rules](../../references/question-log.md#normalizing-the-reuse-key) and scan
    `profile.logged_questions`. If a match is `answered:true` with a non-null `answer`,
