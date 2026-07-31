@@ -4,14 +4,14 @@ level: task
 title: "Build search-generic-site adapter skill"
 short_code: "JOBHUN-T-0005"
 created_at: 2026-07-31T00:28:24.130613+00:00
-updated_at: 2026-07-31T00:28:24.130613+00:00
+updated_at: 2026-07-31T00:35:39.259326+00:00
 parent: JOBHUN-I-0003
 blocked_by: [JOBHUN-T-0003]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -32,6 +32,10 @@ lacks a dedicated adapter, and is the fallback when a dedicated adapter is block
 accepts either a job-board URL to open in the browser or listing text/URLs the user
 pastes, extracts what it can into the adapter-contract listing shape, and hands the
 listings to `add-job-to-list`.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

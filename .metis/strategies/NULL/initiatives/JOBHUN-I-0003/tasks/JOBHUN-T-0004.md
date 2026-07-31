@@ -4,14 +4,14 @@ level: task
 title: "Build find-jobs orchestrator skill"
 short_code: "JOBHUN-T-0004"
 created_at: 2026-07-31T00:28:18.372275+00:00
-updated_at: 2026-07-31T00:28:18.372275+00:00
+updated_at: 2026-07-31T00:35:27.739156+00:00
 parent: JOBHUN-I-0003
 blocked_by: [JOBHUN-T-0003]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -32,6 +32,10 @@ completed setup, asks the per-run automated-vs-human choice, derives the search 
 from `job-focus.md` + `config`, selects which sites to search, dispatches the
 per-site adapter skills, funnels every listing through `add-job-to-list`, and reports a
 summary (found / new / duplicates / blocked).
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

@@ -4,14 +4,14 @@ level: task
 title: "Build search-glassdoor adapter skill"
 short_code: "JOBHUN-T-0008"
 created_at: 2026-07-31T00:28:42.131482+00:00
-updated_at: 2026-07-31T00:28:42.131482+00:00
+updated_at: 2026-07-31T00:36:14.675788+00:00
 parent: JOBHUN-I-0003
 blocked_by: [JOBHUN-T-0003]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -31,6 +31,10 @@ Build `search-glassdoor`: the Glassdoor adapter. It drives the user's logged-in 
 (via claude-in-chrome) to run a Glassdoor jobs search built from the query params, reads
 the result cards, extracts each listing into the adapter-contract shape, and hands them
 to `add-job-to-list`.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
