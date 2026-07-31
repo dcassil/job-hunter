@@ -4,14 +4,14 @@ level: task
 title: "Build record-application worker, rotation resolver, and question-log helpers"
 short_code: "JOBHUN-T-0009"
 created_at: 2026-07-31T00:36:59.435485+00:00
-updated_at: 2026-07-31T00:36:59.435485+00:00
+updated_at: 2026-07-31T00:41:28.658879+00:00
 parent: JOBHUN-I-0004
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -33,6 +33,10 @@ fields, enforcing the status-transition rules; (2) `references/rotation.md` — 
 resume/cover rotation resolver (round-robin, domain, both); (3) `references/question-log.md`
 — the read/append procedure for `profile.json.logged_questions` implementing
 "ask once, reuse forever".
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

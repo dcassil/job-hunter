@@ -4,14 +4,14 @@ level: initiative
 title: "Maintenance skills"
 short_code: "JOBHUN-I-0005"
 created_at: 2026-07-30T23:56:21.287208+00:00
-updated_at: 2026-07-30T23:56:21.287208+00:00
+updated_at: 2026-07-31T00:42:10.259078+00:00
 parent: JOBHUN-V-0001
 blocked_by: [JOBHUN-I-0001, JOBHUN-I-0002]
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/discovery"
+  - "#phase/decompose"
 
 
 exit_criteria_met: false
