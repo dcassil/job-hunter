@@ -23,6 +23,11 @@ for (const field of ["name", "version", "description"]) {
 if (manifest.name && !/^[a-z0-9-]+$/.test(manifest.name)) {
   errors.push(`plugin.json name must be kebab-case: got "${manifest.name}"`);
 }
+if ("author" in manifest && (typeof manifest.author !== "object" || manifest.author === null)) {
+  errors.push(
+    `plugin.json author must be an object ({ name, email }), not a ${typeof manifest.author}`,
+  );
+}
 
 if (errors.length > 0) {
   for (const e of errors) console.error(`FAIL ${e}`);
