@@ -4,14 +4,14 @@ level: task
 title: "Build update-resumes skill"
 short_code: "JOBHUN-T-0013"
 created_at: 2026-07-31T00:42:42.545461+00:00
-updated_at: 2026-07-31T00:42:42.545461+00:00
+updated_at: 2026-07-31T00:48:34.630532+00:00
 parent: JOBHUN-I-0005
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0005
 Build `update-resumes`: a maintenance skill to add, replace, or remove resume and
 cover-letter variants and reconfigure the rotation strategy / domain mapping, reusing
 the setup wizard's ingestion and rotation-capture helper.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

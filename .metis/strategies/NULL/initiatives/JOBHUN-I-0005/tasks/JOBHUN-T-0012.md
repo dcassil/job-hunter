@@ -4,14 +4,14 @@ level: task
 title: "Build update-job-focus skill"
 short_code: "JOBHUN-T-0012"
 created_at: 2026-07-31T00:42:27.669001+00:00
-updated_at: 2026-07-31T00:42:27.669001+00:00
+updated_at: 2026-07-31T00:48:23.792551+00:00
 parent: JOBHUN-I-0005
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0005
 Build `update-job-focus`: a maintenance skill to view and edit `job-focus.md` (the
 target job types / search guidance), optionally using a resume re-analysis to suggest
 changes.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

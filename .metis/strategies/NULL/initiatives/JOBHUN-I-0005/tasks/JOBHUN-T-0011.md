@@ -4,14 +4,14 @@ level: task
 title: "Build review-resume skill"
 short_code: "JOBHUN-T-0011"
 created_at: 2026-07-31T00:42:22.295660+00:00
-updated_at: 2026-07-31T00:42:22.295660+00:00
+updated_at: 2026-07-31T00:48:12.442518+00:00
 parent: JOBHUN-I-0005
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0005
 Build `review-resume`: a read-only maintenance skill that re-reads the current
 resume variant(s) in the working folder and reports the applicant's inferred skills and
 likely target job types, then optionally hands off to `update-job-focus`.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
