@@ -4,14 +4,14 @@ level: task
 title: "Build add-job-to-list worker and adapter contract"
 short_code: "JOBHUN-T-0003"
 created_at: 2026-07-31T00:26:58.438912+00:00
-updated_at: 2026-07-31T00:26:58.438912+00:00
+updated_at: 2026-07-31T00:31:34.065222+00:00
 parent: JOBHUN-I-0003
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -34,6 +34,10 @@ the single sink that normalizes a listing to the job schema, dedupes it, appends
 (`search-linkedin`, `search-indeed`, `search-glassdoor`, `search-generic-site`) and
 the `find-jobs` orchestrator must obey. This is load-bearing: all five downstream
 search skills are written against this contract.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
