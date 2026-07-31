@@ -4,14 +4,14 @@ level: initiative
 title: "Setup wizard skill"
 short_code: "JOBHUN-I-0002"
 created_at: 2026-07-30T23:56:11.846148+00:00
-updated_at: 2026-07-30T23:56:11.846148+00:00
+updated_at: 2026-07-31T00:22:23.208634+00:00
 parent: JOBHUN-V-0001
 blocked_by: [JOBHUN-I-0001]
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/discovery"
+  - "#phase/active"
 
 
 exit_criteria_met: false

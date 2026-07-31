@@ -4,14 +4,14 @@ level: initiative
 title: "Plugin scaffolding and working-folder contract"
 short_code: "JOBHUN-I-0001"
 created_at: 2026-07-30T23:56:08.823473+00:00
-updated_at: 2026-07-31T00:17:07.367725+00:00
+updated_at: 2026-07-31T00:20:36.485974+00:00
 parent: JOBHUN-V-0001
 blocked_by: []
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false

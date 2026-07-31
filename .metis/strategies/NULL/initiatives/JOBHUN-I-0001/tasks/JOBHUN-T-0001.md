@@ -4,14 +4,14 @@ level: task
 title: "Write references/data-contract.md"
 short_code: "JOBHUN-T-0001"
 created_at: 2026-07-31T00:16:37.905456+00:00
-updated_at: 2026-07-31T00:16:37.905456+00:00
+updated_at: 2026-07-31T00:20:26.831342+00:00
 parent: JOBHUN-I-0001
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -33,6 +33,10 @@ working-folder layout, the file schemas, shared conventions (id generation, dedu
 key, status enum + transitions, resume/cover variant naming), and the working-folder
 discovery contract. The JSON schemas in `schemas/` already exist and are the machine
 contract; this document explains and pins the *semantics* around them.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
