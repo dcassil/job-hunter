@@ -4,14 +4,14 @@ level: initiative
 title: "Application subsystem"
 short_code: "JOBHUN-I-0004"
 created_at: 2026-07-30T23:56:18.307097+00:00
-updated_at: 2026-07-30T23:56:18.307097+00:00
+updated_at: 2026-07-31T00:38:06.610276+00:00
 parent: JOBHUN-V-0001
 blocked_by: [JOBHUN-I-0001, JOBHUN-I-0003]
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/discovery"
+  - "#phase/active"
 
 
 exit_criteria_met: false
