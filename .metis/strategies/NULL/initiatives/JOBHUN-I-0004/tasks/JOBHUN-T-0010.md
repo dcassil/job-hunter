@@ -4,14 +4,14 @@ level: task
 title: "Build apply-to-jobs orchestrator skill"
 short_code: "JOBHUN-T-0010"
 created_at: 2026-07-31T00:37:04.381914+00:00
-updated_at: 2026-07-31T00:37:04.381914+00:00
+updated_at: 2026-07-31T00:45:03.395351+00:00
 parent: JOBHUN-I-0004
 blocked_by: [JOBHUN-T-0009]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -33,6 +33,10 @@ logs new questions via the question-log helper, and — per the run's automated-
 choice — submits or stops for human review, recording the outcome through
 `record-application`. This is the highest-consequence skill: it can submit real
 applications, so oversight is central.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
