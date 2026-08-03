@@ -265,8 +265,14 @@ attempt it, and record the skip for the final report. Do not silently drop a boa
 
 Confirm to the user what was created, list the files written and their location, and
 include the preflight summary (which boards are reachable/logged in, and any skipped).
-Tell them they can now run the search/apply skills. Remind them they can re-run setup
-any time to update settings (it will enter update mode).
+Tell them they can now run the search/apply skills — `apply-to-jobs` handles both
+LinkedIn Easy Apply and custom / non-Easy-Apply (ATS / company-site) applications,
+pausing on any step that needs them (account, password, email code, CAPTCHA) and logging
+it as a **handoff**; they can then run `interactive-apply` ("let's go through the ones you
+couldn't complete together") to clear that backlog collaboratively. Once applications are
+out, `check-email-status` reads their inbox (read-only) to fold interview / rejection /
+offer updates into the list. Remind them they can re-run setup any time to update settings
+(it will enter update mode).
 
 ## Files this skill reads and writes
 

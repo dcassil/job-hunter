@@ -36,6 +36,19 @@ appear to disagree, the schema wins.
 - **Never guess an answer.** An answer that is not in `profile.json` and not obtainable
   from the question log (and, in human mode, not provided by the user) is NEVER
   fabricated. In automated mode an unanswerable job is **deferred**, not submitted.
+- **Human owns the prohibited + consequential steps.** Never create an account, enter a
+  password, read the user's email (for a confirmation link/OTP), solve a CAPTCHA, or
+  enter payment details — on any site, ever. On a custom application these become a
+  **handoff** to the user (status `needs_human` / `account_required`), never an action
+  the skill performs.
+- **Human-speed UI only.** Drive applications with real clicks/typing at a deliberate
+  pace; never submit or fill via `fetch`/XHR/DOM injection (anti-bot-guard). See
+  [`custom-application.md`](../../references/custom-application.md).
+- **Pre-answer gates on every field.** Before answering any field, apply the
+  [pre-answer gates](../../references/question-log.md#pre-answer-gates): if it could be an
+  AI/bot-detection trap, or if it needs prose beyond a known short answer, do NOT fill it —
+  log it for the user (`needs: ["bot-check"]` or `["question"]`). Conservative: when
+  unsure, log for the user.
 - **Ask once, reuse forever.** Questions already answered anywhere in `profile.json` are
   never re-asked; genuinely new questions are logged. All of this goes through
   [`question-log.md`](../../references/question-log.md) — never invent your own storage.
@@ -127,18 +140,40 @@ falls through to round-robin). That single field is the ONLY thing this skill ma
 `config.json`; touch nothing else in it. Hold the returned ids to pass to
 `record-application` on submit.
 
-#### 4b — Open the posting in the browser
+#### 4b — Open the posting and route by application type
 
 Open the job's `url` with the claude-in-chrome tools (a new tab in the user's existing
 session). Follow the claude-in-chrome guidance: prefer its structured page-read and
 form-input tools, avoid triggering native dialogs, and read the form before acting. If
-the posting cannot be opened (dead link, login/anti-bot wall, CAPTCHA), treat it as a
-per-job failure: record `skipped` with the reason and continue.
+the posting cannot be opened (dead link, login/anti-bot wall on the *posting itself*),
+treat it as a per-job failure: record `skipped` with the reason and continue.
+
+Then determine the **application type** and route:
+
+- **LinkedIn Easy Apply** (an in-LinkedIn "Easy Apply" flow): use the Easy Apply path,
+  steps 4c–4f below.
+- **External / ATS / custom** (an "Apply" that leaves LinkedIn for Greenhouse, Lever,
+  Workday, Ashby, iCIMS, SmartRecruiters, or a company site): use the **custom route**,
+  step [4x](#4x--custom--non-easy-apply-route) below, which follows
+  [`references/custom-application.md`](../../references/custom-application.md). Do NOT
+  attempt the Easy Apply steps on a custom site.
 
 #### 4c — Fill fields answerable from profile.json (WITHOUT asking)
 
-For each field on the application form, resolve its value through the question log's
-[lookup order](../../references/question-log.md#lookup-order):
+For each field, FIRST apply the two
+[pre-answer gates](../../references/question-log.md#pre-answer-gates) — they run before any
+lookup and are conservative (when unsure, log for the user, never guess):
+
+- **Trap gate** — could this be an AI/bot-detection trap or honeypot (hidden/off-screen
+  input, "leave blank if human", "are you an AI/bot?")? If maybe, do NOT fill it. In this
+  batch, treat the job as needing the user: record a handoff with `needs` including
+  `bot-check` (via 4x-style handoff / `record-application`) and do not submit.
+- **Free-response gate** — does the field need prose beyond a known static answer or ~1–4
+  words (essay, "why this company?", open cover text)? If yes, do NOT auto-answer; handle
+  it as an unknown in 4d (`needs: ["question"]`), leaving it for a human.
+
+Only a field that passes BOTH gates is answered. Resolve its value through the question
+log's [lookup order](../../references/question-log.md#lookup-order):
 
 1. **Structured demographics/contact.** If the field maps to a
    `profile.demographics` field (`gender`, `ethnicity`, `veteran`, `disability`,
@@ -227,26 +262,72 @@ write `jobs.json` or `jobs.md` yourself. Inspect its return: on
 job as a per-job failure: record it `skipped` with the error as the reason and continue —
 do not retry with fabricated data and do not abort the run.
 
+#### 4x — Custom / non-Easy-Apply route
+
+Taken when 4b routed the job as external/ATS/custom. Follow
+[`references/custom-application.md`](../../references/custom-application.md) end to end —
+including its **safety invariant** (never create accounts, enter passwords, read email,
+or solve CAPTCHAs) and **human-speed-only** rule (real clicks/typing; never fetch/DOM-
+injection submits). In this unattended batch, one blocked application MUST NOT stall the
+run — resolve each custom job to exactly one outcome and continue:
+
+- **Account required before the form is viewable** → do NOT sign up. Call
+  `record-application` with `status: "account_required"` and a `handoff`
+  (`needs: ["account"]`, `application_url` = the job/apply URL, `blocking` =
+  "account required before application is viewable", `logged_at` = today). Continue.
+- **Fillable form** → detect the ATS, then for each field apply the two
+  [pre-answer gates](../../references/question-log.md#pre-answer-gates) first (trap →
+  leave it, handoff `needs: ["bot-check"]`; free-response/prose → leave it, handoff
+  `needs: ["question"]`), and fill only fields that pass both from `profile.json` via the
+  [question log](../../references/question-log.md#lookup-order) at human speed, attaching
+  the rotation resume for `resume_used` (skip cover tailoring; paste the default prose
+  cover only into an optional plain-text field). Then:
+  - **A human-only step is hit** (account / password / email-confirm / CAPTCHA /
+    payment) **or** an **unknown question** appears (no answer in the profile; in this
+    non-interactive batch you do NOT ask): do NOT guess and do NOT submit. Save a draft
+    if the ATS supports it. For an unknown question, first append it to
+    `profile.logged_questions` (unanswered) per the question log. Then call
+    `record-application` with `status: "needs_human"` and a `handoff`
+    (`ats`, `application_url`, `blocking` = the exact step/question, `needs` = the
+    trigger value(s), `draft_saved`, `filled_through`, `logged_at` = today). Continue to
+    the next job.
+  - **Fully answerable and no human-only step** → submit with a real click, verify the
+    confirmation, and record `applied` via 4f (rotation pointer advances only here).
+- **Dead/closed posting** → record `skipped` with the reason and continue.
+
+`needs_human` / `account_required` jobs are NOT failures — they are successfully
+prepared handoffs. Collect them for the Step 5 handoff queue.
+
 ### Step 5 — Report the run summary
 
 After the loop, print a summary listing every job worked and its outcome — `applied`,
-`deferred`, or `skipped` — each with a reason, plus totals. Remind the user that deferred
-jobs are still `status:"new"`, that unanswered logged questions can be resolved on a
-`human` run, and that they can review the pipeline in `jobs/jobs.md`.
+`deferred`, `needs_human`, `account_required`, or `skipped` — each with a reason, plus
+totals. Then print a **handoff queue**: the `needs_human` / `account_required` jobs, each
+with company, role, the `handoff.blocking` reason, and the URL to finish at. Remind the
+user that deferred jobs are still `status:"new"`, that unanswered logged questions can be
+resolved on a `human` run, that the handoff jobs are prepared and waiting, and that they
+can clear the handoff queue collaboratively by running the
+[`interactive-apply`](../interactive-apply/SKILL.md) skill ("let's go through the ones you
+couldn't complete together"). The pipeline is reviewable in `jobs/jobs.md`.
 
 Suggested format:
 
 ```text
-Apply run — run mode: human · new jobs worked: 5
+Apply run — run mode: auto · new jobs worked: 6
 
 Per job:
-- linkedin-3891  Senior Backend Engineer @ Acme      : applied   (resume-b / cover-b)
-- indeed-1024    Platform Engineer @ Nimbus Labs      : deferred  (unanswered: "Desired salary?" — needs human run)
-- glassdoor-77   SRE @ Globex                         : applied   (resume-a / cover-a)
-- generic-abc123 Backend Dev @ Initech                : skipped   (posting behind login wall)
-- linkedin-4002  Staff Engineer @ Hooli               : deferred  (user did not confirm submission)
+- linkedin-3891   Senior Backend Engineer @ Acme     : applied           (resume-b / cover-b)
+- indeed-1024     Platform Engineer @ Nimbus Labs     : deferred          (unanswered: "Desired salary?" — needs human run)
+- greenhouse-77   SRE @ Globex                        : needs_human       (account required to submit)
+- workday-88      Staff Eng @ Initech                 : account_required  (signup required before form is viewable)
+- linkedin-4002   Staff Engineer @ Hooli              : applied           (resume-a / cover-a)
+- lever-90        Frontend @ Vertex                   : skipped           (posting 404)
 
-Totals: 2 applied · 2 deferred · 1 skipped
+Totals: 2 applied · 1 deferred · 1 needs_human · 1 account_required · 1 skipped
+
+Handoff queue (finish these with `interactive-apply`):
+- greenhouse-77  SRE @ Globex     — account required to submit → https://boards.greenhouse.io/globex/jobs/77
+- workday-88     Staff Eng @ Initech — signup required before form → https://initech.wd1.myworkdayjobs.com/…
 ```
 
 ## Files this skill reads and writes

@@ -180,13 +180,15 @@ JSON **array**; each element is a job object that forbids additional properties
 | `cover_used` | string or null | No | Cover variant id used to apply, or `null`. |
 | `applied_at` | string or null | No | When the application was submitted, or `null`. |
 | `notes` | string | No | Free-form notes. |
+| `handoff` | object | No | Present on `needs_human` / `account_required` jobs; see [Handoff object](#handoff-object). |
 
 Enum values, copied verbatim:
 
 - `remote`: `remote`, `hybrid`, `onsite`, `null`
 - `source`: any board id in `jobs.schema.json`'s `source` enum — see the
   [board registry](job-boards.md)
-- `status`: `new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`
+- `status`: `new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`,
+  `needs_human`, `account_required`
 
 See [`../schemas/examples/jobs.example.json`](../schemas/examples/jobs.example.json).
 
@@ -202,6 +204,9 @@ exists so the user can scan their pipeline without reading JSON.
 - Every job in `jobs.json` should appear in `jobs.md`, typically as a table or
   list grouped or sorted by `status`, showing at least `title`, `company`,
   `status`, and a link to `url`.
+- Jobs in `needs_human` / `account_required` should render a scannable "needs you"
+  section (or column) showing the `handoff.blocking` reason and `handoff.application_url`
+  so the user knows exactly what to finish and where.
 
 ## Shared conventions
 
@@ -243,13 +248,21 @@ new one.
 ### Status enum and transitions
 
 `status` is one of the following (copied verbatim from the schema):
-`new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`.
+`new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`, `needs_human`,
+`account_required`.
 
 The primary lifecycle is:
 
 ```text
 new → applied → interviewing → offer
 ```
+
+`needs_human` and `account_required` are **holding states** for custom /
+non-Easy-Apply applications: the agent filled everything it could and now needs the
+user to complete a human-only step (create an account, enter a password, confirm an
+email, solve a CAPTCHA, or answer an unknown question). They carry a
+[`handoff`](#handoff-object) object and rejoin the primary lifecycle once the human
+finishes (→ `applied`) or the user drops the job (→ `skipped`).
 
 `skipped` and `rejected` are **terminal side states**: a job can leave the
 primary lifecycle for a terminal state, but nothing transitions out of a terminal
@@ -259,10 +272,12 @@ Allowed transitions:
 
 | From | Allowed to |
 | --- | --- |
-| `new` | `applied`, `skipped` |
+| `new` | `applied`, `skipped`, `needs_human`, `account_required` |
 | `applied` | `interviewing`, `rejected`, `skipped` |
 | `interviewing` | `offer`, `rejected`, `skipped` |
 | `offer` | (terminal — pipeline success) |
+| `needs_human` | `applied`, `account_required`, `skipped` |
+| `account_required` | `applied`, `needs_human`, `skipped` |
 | `skipped` | (terminal) |
 | `rejected` | (terminal) |
 
@@ -273,6 +288,31 @@ Notes:
   employer declined the applicant. Both are terminal.
 - When a job moves to `applied`, record `applied_at` and the `resume_used` /
   `cover_used` variant ids used for that application.
+- When a custom application can't be completed unattended, it moves to
+  `needs_human` (a step needs the user mid-application) or `account_required` (the
+  site required an account before the form was even viewable), always carrying a
+  `handoff` object. Both are written only by `record-application`.
+
+### Handoff object
+
+`handoff` is present only on `needs_human` / `account_required` jobs and records how
+far a custom / non-Easy-Apply application got and what the human must do to finish it.
+It is written exclusively by `record-application`.
+
+| Field | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `ats` | string or null | No | Detected platform (`greenhouse`, `lever`, `workday`, `ashby`, `icims`, `smartrecruiters`, `generic`) or `null` if unknown. |
+| `application_url` | string | No | The URL the user should open to finish the application. |
+| `blocking` | string | Yes | Short human-readable reason, e.g. `"account required to submit"` or `"unknown question: years managing a P&L"`. |
+| `needs` | array | Yes | One or more of `account`, `password`, `email-confirm`, `captcha`, `question`, `payment`, `bot-check` — the human-only step(s)/unknowns blocking completion. `bot-check` = a suspected AI/bot-detection trap or honeypot field the agent left untouched for the user to review (see the [pre-answer gates](question-log.md#pre-answer-gates)); `question` also covers a free-response/prose field the user must write. |
+| `draft_saved` | boolean | No | Whether the ATS supported saving progress and a draft was saved for the user to resume. |
+| `filled_through` | string or null | No | How far the agent got, e.g. `"all fields except final account+submit"`. |
+| `logged_at` | string | Yes | Date the handoff was recorded (`YYYY-MM-DD`). |
+
+The `needs` values are the join point the `interactive-apply` skill reads to know
+what to ask the user for. None of these steps are ever performed by the agent — they
+are always handed to the human (see the safety invariant in
+[`custom-application.md`](custom-application.md)).
 
 ### Variant naming
 

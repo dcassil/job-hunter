@@ -22,6 +22,22 @@ Orchestrators (interactive):
   resume, confirm target job types.
 - `find-jobs` — run a search across chosen sites (per-run automated-vs-human choice).
 - `apply-to-jobs` — apply to new listings using saved answers and rotated materials.
+  Handles both **LinkedIn Easy Apply** and **custom / non-Easy-Apply** applications
+  (Greenhouse, Lever, Workday, Ashby, iCIMS, SmartRecruiters, company sites): it fills
+  what it can at human speed, and on any step only a human may do — creating an account,
+  entering a password, confirming an email code, solving a CAPTCHA — or an unknown
+  question, it saves a draft, records a **handoff** (status `needs_human` /
+  `account_required`), and keeps going so one blocked application never stalls the batch.
+- `interactive-apply` — the collaborative counterpart: say "let's go through the ones you
+  couldn't complete together" and it walks the handoff backlog one job at a time — showing
+  each job's details and what's blocking, asking whether to apply, then co-filling the
+  application while pausing for you to do the human-only steps, and submitting on your go.
+- `check-email-status` — reads your logged-in Gmail (browser, **read-only**), classifies
+  application-status mail (confirmation / interview / rejection / offer vs. recommendation
+  noise), updates the affected jobs via `record-application` (asking you before any
+  ambiguous change), and reports the important changes. It never sends, replies to, or
+  drafts email; recommendation digests are offered to `find-jobs` instead of changing the
+  list.
 - `review-resume`, `update-job-focus`, `update-resumes` — maintenance.
 
 Workers (non-interactive):
@@ -29,7 +45,18 @@ Workers (non-interactive):
 - `search-linkedin`, `search-indeed`, `search-glassdoor`, `search-generic-site` — site
   adapters driving your logged-in browser.
 - `add-job-to-list` — normalize + dedupe + append a listing.
-- `record-application` — status transitions + material bookkeeping.
+- `record-application` — status transitions + material bookkeeping (including `handoff`).
+
+**Safety invariant (all apply flows):** the agent never creates accounts, enters
+passwords, reads your email, solves CAPTCHAs, or enters payment details, and never
+submits via `fetch`/DOM injection — those steps are always handed to you and driven at
+human speed. Two **pre-answer gates** run on every field before it's filled: a
+**bot-trap gate** (suspected AI/bot-detection or honeypot fields are left for you to
+review, not filled) and a **free-response gate** (anything needing prose beyond a known
+short answer is logged for you to write in your own voice). Both are conservative — when
+unsure, they log for you. See
+[`references/custom-application.md`](references/custom-application.md) and the
+[pre-answer gates](references/question-log.md#pre-answer-gates).
 
 ## Data contract & guardrails
 
@@ -44,9 +71,11 @@ Workers (non-interactive):
 
 ## Status
 
-Complete. All twelve skills are implemented and validated. Planned and tracked in Metis
-under `.metis/` — vision `JOBHUN-V-0001` and the five initiatives `JOBHUN-I-0001`…`0005`
-are all completed.
+Active. All fourteen skills are implemented and validated. Planned and tracked in Metis
+under `.metis/` — vision `JOBHUN-V-0001`; initiatives `JOBHUN-I-0001`…`0006` completed;
+`JOBHUN-I-0007` adds the `apply-to-jobs` custom route + `interactive-apply`; `JOBHUN-I-0008`
+adds the apply-time bot-trap and free-response gates; `JOBHUN-I-0009` adds the
+`check-email-status` skill (email-based status tracking).
 
 ## Requirements
 

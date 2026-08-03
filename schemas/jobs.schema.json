@@ -44,12 +44,69 @@
       "found_at": { "type": "string" },
       "status": {
         "type": "string",
-        "enum": ["new", "applied", "interviewing", "offer", "skipped", "rejected"]
+        "enum": [
+          "new",
+          "applied",
+          "interviewing",
+          "offer",
+          "skipped",
+          "rejected",
+          "needs_human",
+          "account_required"
+        ]
       },
       "resume_used": { "type": ["string", "null"] },
       "cover_used": { "type": ["string", "null"] },
       "applied_at": { "type": ["string", "null"] },
-      "notes": { "type": "string" }
+      "notes": { "type": "string" },
+      "handoff": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Present when a custom/non-Easy-Apply application was filled up to a point that needs the human (see status needs_human / account_required). Written only by record-application.",
+        "required": ["blocking", "needs", "logged_at"],
+        "properties": {
+          "ats": {
+            "type": ["string", "null"],
+            "description": "Detected application platform, e.g. 'greenhouse', 'lever', 'workday', 'ashby', 'icims', 'smartrecruiters', 'generic', or null if unknown."
+          },
+          "application_url": {
+            "type": "string",
+            "description": "The external application URL the human should open to finish."
+          },
+          "blocking": {
+            "type": "string",
+            "description": "Short human-readable reason the application cannot be completed unattended, e.g. 'account required to submit' or 'unknown question: years managing a P&L'."
+          },
+          "needs": {
+            "type": "array",
+            "description": "The human-only step(s) or unknowns blocking completion.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "account",
+                "password",
+                "email-confirm",
+                "captcha",
+                "question",
+                "payment",
+                "bot-check"
+              ]
+            }
+          },
+          "draft_saved": {
+            "type": "boolean",
+            "description": "True if the ATS supported saving progress and a draft was saved so the human can resume."
+          },
+          "filled_through": {
+            "type": ["string", "null"],
+            "description": "How far the agent got before handing off, e.g. 'all fields except final account+submit'."
+          },
+          "logged_at": {
+            "type": "string",
+            "description": "Date the handoff was recorded (YYYY-MM-DD)."
+          }
+        }
+      }
     }
   }
 }

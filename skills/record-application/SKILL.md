@@ -1,14 +1,15 @@
 ---
 name: record-application
-description: Use when an application step needs to change a single job's pipeline status — for example when apply-to-jobs has submitted an application (move to `applied`), when the user marks a job `skipped`, or when interview/offer/rejection outcomes arrive. This is a non-interactive worker skill — invoked by other skills, never run directly by the user. It is the SOLE writer of a job's `status`, `resume_used`, `cover_used`, and `applied_at` fields; it validates the requested transition against the data-contract status graph and rejects invalid ones, and it never touches any other field or any other job.
+description: Use when an application step needs to change a single job's pipeline status — for example when apply-to-jobs has submitted an application (move to `applied`), when a custom/non-Easy-Apply application needs the user to finish a human-only step (move to `needs_human` or `account_required` with a `handoff`), when the user marks a job `skipped`, or when interview/offer/rejection outcomes arrive. This is a non-interactive worker skill — invoked by other skills, never run directly by the user. It is the SOLE writer of a job's `status`, `resume_used`, `cover_used`, `applied_at`, and `handoff` fields; it validates the requested transition against the data-contract status graph and rejects invalid ones, and it never touches any other field or any other job.
 ---
 
 # record-application
 
 The single **status writer** for the jobs pipeline. Where `add-job-to-list` is the
 sink for newly discovered jobs, `record-application` is the ONLY thing that mutates a
-job's lifecycle: its `status` and, on a move to `applied`, its `applied_at`,
-`resume_used`, and `cover_used`. It runs non-interactively: it asks the user nothing,
+job's lifecycle: its `status`; on a move to `applied`, its `applied_at`,
+`resume_used`, and `cover_used`; and on a move to `needs_human` / `account_required`,
+its `handoff` object. It runs non-interactively: it asks the user nothing,
 makes no consequential prompts, and returns a small result object to whatever skill
 invoked it.
 
@@ -31,12 +32,13 @@ document and the schema appear to disagree, the schema wins.
    setup, and stop.
 2. **Input names exactly one job and one target status.** The caller passes a single
    job `id`, a target `status`, and — only when the target is `applied` — the
-   `resume_used` and `cover_used` variant ids for that application. If the job `id`
-   is missing or not found in `jobs/jobs.json`, return `{ "error": "job-not-found" }`
-   and stop.
+   `resume_used` and `cover_used` variant ids for that application, or — only when
+   the target is `needs_human` / `account_required` — a `handoff` object. If the job
+   `id` is missing or not found in `jobs/jobs.json`, return
+   `{ "error": "job-not-found" }` and stop.
 3. **Target status is a valid enum value.** The target `status` MUST be one of
-   `new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`. Anything else
-   returns `{ "error": "invalid-status" }` and stops.
+   `new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`, `needs_human`,
+   `account_required`. Anything else returns `{ "error": "invalid-status" }` and stops.
 4. **The transition must be allowed by the status graph.** See
    [Step 3](#step-3--validate-the-transition). An illegal transition is rejected —
    never forced.
@@ -60,6 +62,32 @@ document and the schema appear to disagree, the schema wins.
   variant ids chosen by the rotation resolver in
   [`../../references/rotation.md`](../../references/rotation.md). If absent, treat as
   `null`. Ignored for any target status other than `applied`.
+- `handoff` (only meaningful when `status` is `needs_human` or `account_required`) —
+  the handoff record produced by the
+  [custom-application procedure](../../references/custom-application.md#5-handoff-record-shape):
+  an object with `blocking`, `needs`, `logged_at` (required) and optional `ats`,
+  `application_url`, `draft_saved`, `filled_through`. Each `needs` value is one of
+  `account`, `password`, `email-confirm`, `captcha`, `question`, `payment`, `bot-check`
+  (`bot-check` = a suspected AI/bot-detection trap the agent left for the user to review).
+  Ignored for any other target status. If `logged_at` is absent, set it to today's date.
+
+Example handoff input:
+
+```json
+{
+  "id": "greenhouse-acme-1",
+  "status": "needs_human",
+  "handoff": {
+    "ats": "greenhouse",
+    "application_url": "https://boards.greenhouse.io/acme/jobs/1",
+    "blocking": "account required to submit",
+    "needs": ["account"],
+    "draft_saved": false,
+    "filled_through": "all fields except final account+submit",
+    "logged_at": "2026-08-01"
+  }
+}
+```
 
 ## Procedure
 
@@ -88,16 +116,21 @@ copied here verbatim:
 
 | From | Allowed to |
 | --- | --- |
-| `new` | `applied`, `skipped` |
+| `new` | `applied`, `skipped`, `needs_human`, `account_required` |
 | `applied` | `interviewing`, `rejected`, `skipped` |
 | `interviewing` | `offer`, `rejected`, `skipped` |
 | `offer` | (terminal — pipeline success) |
+| `needs_human` | `applied`, `account_required`, `skipped` |
+| `account_required` | `applied`, `needs_human`, `skipped` |
 | `skipped` | (terminal) |
 | `rejected` | (terminal) |
 
 Rules:
 
 - `offer`, `skipped`, and `rejected` are terminal: nothing transitions out of them.
+- `needs_human` and `account_required` are **holding states** for custom
+  applications: they rejoin the lifecycle at `applied` (the human finished it) or
+  leave at `skipped`, and may swap between each other as a re-assessment.
 - A no-op where the target equals the current status is NOT a valid transition (it
   is not listed in the graph); reject it as invalid rather than rewriting fields.
 - If the requested `current → target` pair is not in the table, reject:
@@ -113,9 +146,19 @@ On a valid transition, mutate ONLY the matched job, and ONLY these fields:
   - Set `applied_at` to today's date (`YYYY-MM-DD`).
   - Set `resume_used` to the input `resume_used` (or `null` if none supplied).
   - Set `cover_used` to the input `cover_used` (or `null` if none supplied).
+- **On a move to `needs_human` or `account_required` (and only then):**
+  - Set `handoff` to the input `handoff` object. If its `logged_at` is missing, set
+    it to today's date (`YYYY-MM-DD`). The written object MUST validate against the
+    schema's `handoff` shape (required `blocking`, `needs`, `logged_at`; no properties
+    beyond the allowed set). Leave `applied_at` / `resume_used` / `cover_used` as-is.
+  - If no `handoff` was supplied, still make the transition but leave `handoff` absent
+    (the caller should always supply one; do not fabricate its contents).
 - For every other target status (`skipped`, `interviewing`, `offer`, `rejected`),
-  change `status` only. Do NOT touch `applied_at`, `resume_used`, or `cover_used` —
-  leave whatever values they already hold.
+  change `status` only. Do NOT touch `applied_at`, `resume_used`, `cover_used`, or
+  `handoff` — leave whatever values they already hold.
+- When a job leaves a holding state for `applied` or `skipped`, you MAY clear a now-
+  irrelevant `handoff` (omit it) or leave it as historical context; do not leave a
+  `handoff` that contradicts the new status on a non-holding state.
 
 NEVER change `id`, `title`, `company`, `location`, `remote`, `url`, `source`,
 `posted`, `found_at`, or `notes`. NEVER touch any other job's row.
@@ -136,6 +179,11 @@ identical format to `add-job-to-list` so the two writers never disagree: group b
 `status`, and within each group sort by `found_at` descending (newest first).
 Include at least `title`, `company`, `status`, and a Markdown link to `url`.
 
+For the `needs_human` and `account_required` sections, add two extra columns —
+**Blocking** (`handoff.blocking`) and **Finish at** (a Markdown link to
+`handoff.application_url`, falling back to the job `url`) — so the user can scan
+exactly what to complete and where.
+
 Format (identical to `add-job-to-list`):
 
 ```markdown
@@ -154,10 +202,17 @@ _Generated from jobs.json — do not edit by hand._
 | Title | Company | Status | Link |
 | --- | --- | --- | --- |
 | Platform Engineer | Nimbus Labs | applied | [open](https://nimbuslabs.example/careers/platform-engineer) |
+
+## needs_human
+
+| Title | Company | Status | Blocking | Finish at |
+| --- | --- | --- | --- | --- |
+| Staff Frontend Engineer | Acme | needs_human | unknown question: years managing a P&L | [finish](https://boards.greenhouse.io/acme/jobs/1) |
 ```
 
 Emit a section only for statuses that have at least one job. Order sections by the
-lifecycle: `new`, `applied`, `interviewing`, `offer`, `skipped`, `rejected`.
+lifecycle: `new`, `applied`, `interviewing`, `offer`, `needs_human`,
+`account_required`, `skipped`, `rejected`.
 
 ### Step 7 — Return a result to the caller
 
@@ -175,8 +230,10 @@ On success, return:
 ```
 
 `applied_at`, `resume_used`, and `cover_used` are echoed only for a move to
-`applied`; for other transitions return just `id`, `from`, and `to`. On any gate
-failure return the corresponding error object instead:
+`applied`. For a move to `needs_human` / `account_required`, echo the written
+`handoff` object alongside `id`, `from`, and `to`. For all other transitions return
+just `id`, `from`, and `to`. On any gate failure return the corresponding error
+object instead:
 `{ "error": "no-working-folder" }`, `{ "error": "job-not-found" }`,
 `{ "error": "invalid-status" }`, or
 `{ "error": "invalid-transition", "from": "<current>", "to": "<target>" }`.
@@ -187,8 +244,8 @@ failure return the corresponding error object instead:
   validity), `<working_dir>/jobs/jobs.json` (current list), and the schema
   [`../../schemas/jobs.schema.json`](../../schemas/jobs.schema.json) plus the
   contract [`../../references/data-contract.md`](../../references/data-contract.md).
-- **Writes:** `<working_dir>/jobs/jobs.json` (status/application fields of one job
-  only) and `<working_dir>/jobs/jobs.md` (full regeneration).
+- **Writes:** `<working_dir>/jobs/jobs.json` (status/application/`handoff` fields of
+  one job only) and `<working_dir>/jobs/jobs.md` (full regeneration).
 - **Never touches:** any other working-folder file; never `config.json` or
   `profile.json`; never any field other than `status`/`applied_at`/`resume_used`/
-  `cover_used`; never any job other than the one named.
+  `cover_used`/`handoff`; never any job other than the one named.

@@ -16,6 +16,11 @@ later. Run this preflight to catch and fix that up front.
   types passwords or submits login forms.
 - **Never defeat protections.** If a site shows a CAPTCHA or anti-bot wall, report it
   and let the user resolve it manually; do not try to bypass it.
+- **Human-speed control and handoff when applying.** When a skill goes on to *apply*
+  (not just search), it drives the form with real clicks/typing at a deliberate pace —
+  never `fetch`/DOM-injection submits — and pauses to hand any account creation, password
+  entry, email/OTP confirmation, CAPTCHA, or payment to the user. See
+  [`custom-application.md`](custom-application.md).
 - **Verify, then continue.** After the user says they installed something or logged in,
   re-check before moving on. Loop until reachable, or the user explicitly skips.
 - **Skips are explicit.** The user may choose to skip a board; record the skip in the

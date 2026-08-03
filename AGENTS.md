@@ -38,6 +38,25 @@ and Markdown instructions. Skills are prompts/instructions, not a runtime progra
 
 - **Human in control of consequences** — final application submission respects the
   user's per-run automated-vs-human choice.
+- **Human owns the prohibited + consequential steps** — no skill may create an account,
+  enter a password, read the user's email (including for a confirmation link/OTP), solve
+  a CAPTCHA, or enter payment details. On a custom / non-Easy-Apply application these
+  become a **handoff** to the user (job status `needs_human` / `account_required`), never
+  an action a skill performs. This is not overridable, even with credentials supplied.
+- **Human-speed UI only for applying** — drive applications with real clicks/typing at a
+  deliberate pace; never submit or fill via `fetch`/XHR/DOM injection (anti-bot-guard).
+  `apply-to-jobs` (batch, with handoff) and `interactive-apply` (collaborative) share
+  [`references/custom-application.md`](references/custom-application.md).
+- **Pre-answer gates on every field** — before answering, apply the
+  [pre-answer gates](references/question-log.md#pre-answer-gates): a suspected
+  AI/bot-detection trap/honeypot and any free-response/prose field are logged for the user
+  (`needs: ["bot-check"]` / `["question"]`), never filled by the agent. Conservative: when
+  unsure, log for the user.
+- **Read-only on the inbox** — `check-email-status` only *reads* Gmail to update the list:
+  it never sends, replies to, drafts, or forwards mail, never opens attachments or clicks
+  links, never changes labels/archive/read state. All list writes go through
+  `record-application`; ambiguous email→job matches are confirmed with the user, never
+  guessed. See [`references/email-status.md`](references/email-status.md).
 - **Ask once, reuse forever** — never re-ask a question already stored in the profile;
   log genuinely new questions.
 - **Stateless plugin** — all state lives in the runtime working folder; skills discover

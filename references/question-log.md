@@ -5,6 +5,13 @@ application form asks a question. It implements the **ask once, reuse forever**
 principle: a question already answered anywhere in the profile is never asked again,
 and a genuinely new question is logged so a future run can reuse its answer.
 
+It governs **every** application surface identically — LinkedIn Easy Apply and any
+custom / non-Easy-Apply (ATS or company-site) form driven via
+[`custom-application.md`](./custom-application.md). Custom forms use this same lookup,
+append, and answer mechanism; they do NOT invent a separate store. In an unattended
+batch a field with no answer here is an unknown that becomes a handoff; in an
+interactive run the skill may ask the user and record the answer here on the spot.
+
 All reads and writes conform EXACTLY to
 [`data-contract.md`](./data-contract.md) and
 [`../schemas/profile.schema.json`](../schemas/profile.schema.json). Where this
@@ -31,6 +38,43 @@ Normalize the raw question text into a reuse key before any comparison:
 Use this normalized form ONLY for matching. Store the **original** question text
 (as presented on the form, at most lightly trimmed) in the `question` field so the
 log stays human-readable — normalization is a comparison detail, not stored state.
+
+## Pre-answer gates
+
+Before resolving ANY field through the lookup order below, apply these two gates **to
+that field first**. They take priority over the lookup and over any stored answer: if a
+gate trips, do NOT fill the field — log it for the user instead. Both gates are
+**conservative** — when you are unsure, log it for the user; never guess to get past them.
+They apply on every apply surface (LinkedIn Easy Apply and custom / ATS forms alike).
+
+### Gate 1 — Trap gate (AI / bot detection)
+
+Think: **does this field look like it could be an AI / bot-detection trap?** Signals:
+
+- an input hidden from a human (CSS `display:none` / `visibility:hidden`, off-screen or
+  zero-size, `aria-hidden`, a classic honeypot such as a stray `website2` / `url2` /
+  `homepage` field a real user never sees);
+- a label/placeholder that says to leave it blank, or that only a bot would complete;
+- an explicit "are you an AI / automated tool / bot?" or "confirm you are human" question;
+- anything that otherwise seems designed to trip automation.
+
+If it **maybe** is a trap, do NOT fill it and do NOT try to "pass" the check. Log it for
+the user to review — in an unattended batch this is a handoff whose `needs` includes
+`bot-check` (see [data-contract handoff](data-contract.md#handoff-object)); in an
+interactive run, point it out and let the user handle it. Never attempt to solve or defeat
+bot detection.
+
+### Gate 2 — Free-response gate (prose)
+
+Think: **does answering this field require prose beyond a known static answer or roughly
+1–4 words?** If yes — an essay, "why this company/role?", "describe a time you…", an open
+cover-letter box, or any multi-sentence free-text — do NOT auto-answer. Log it for the
+user to provide: batch → a handoff whose `needs` includes `question`; interactive → ask the
+user, who writes it in their own voice (offer a draft only if they ask). A short factual
+field whose answer is known and brief (e.g. "Years of React?" → `8`) passes this gate and
+is filled normally.
+
+Only fields that pass BOTH gates proceed to the lookup order.
 
 ## Lookup order
 
