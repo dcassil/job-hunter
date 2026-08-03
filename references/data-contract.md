@@ -81,6 +81,7 @@ but the fields below are the contract.
 | `remote_pref` | string enum | Yes | One of `remote`, `local`, `both`. |
 | `automation_default` | string enum | Yes | One of `ask`, `auto`, `human`. Default answer to the per-run automated-vs-human prompt. |
 | `sites` | array of string enum | Yes | Each item is a board id from the [board registry](job-boards.md) (e.g. `linkedin`, `indeed`, `glassdoor`, `ziprecruiter`, …, `generic`). The schema enum is the authoritative closed set. |
+| `email_accounts` | array | No | Optional (additive; not schema-validated). Gmail inboxes for `check-email-status` to scan, each `{ "email": <address>, "authuser": <gmail index>, "primary": <bool?> }`. The `primary` entry is checked first, then the rest. See [`email-status.md`](email-status.md#which-accounts-to-check). |
 
 Enum values, copied verbatim:
 

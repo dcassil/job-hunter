@@ -44,23 +44,31 @@ writes exclusively through
 
 ## Procedure
 
-### Step 1 — Load tracked jobs and choose the window
+### Step 1 — Load tracked jobs, choose the account(s) and window
 
 Read `<working_dir>/jobs/jobs.json`. Collect the **tracked targets**: jobs with status
 `applied`, `interviewing`, `needs_human`, or `account_required` — these are the ones that
-could receive an update. Note their companies/recruiters and roles. Choose the search
-window: default `newer_than:7d`; let the user override (e.g. "last 3 days", or since the
+could receive an update. Note their companies/recruiters and roles.
+
+Choose the **account(s)** to check per
+[which account(s) to check](../../references/email-status.md#which-accounts-to-check): if
+`config.email_accounts` is set, check the `primary` entry first (via its `authuser`), then
+sweep the rest; otherwise use whichever account the browser is on. Choose the search
+window: default `newer_than:7d`; let the user override (e.g. "last 5 days", or since the
 last check).
 
 ### Step 2 — Build and run the scoped search
 
-Assemble ONE Gmail query per the
+Assemble the Gmail queries per the
 [search-scoping recipe](../../references/email-status.md#search-scoping-never-walk-the-inbox)
-— tracked companies/recruiters + ATS/job sender domains + status phrases + the window —
-and navigate to `https://mail.google.com/mail/u/0/#search/<url-encoded-query>`. Read the
-result list. If it's still large, tighten (exclude promotions, narrow the window, or search
-per company). Prefer quoted phrases and `from:` domains over bare words to avoid loose
-substring matches.
+— tracked companies/recruiters + ATS/job sender domains + status phrases + the window — and
+navigate to `https://mail.google.com/mail/u/<authuser>/#search/<url-encoded-query>` for the
+selected account. **Do NOT exclude job-board senders** (LinkedIn/Indeed relay employer
+decisions as "Your application to \<role\> at \<company\>"); in addition to the broad query,
+run the dedicated **rejection / interview / offer** phrase searches from the recipe so
+relayed decisions are never missed. If a pass is large, narrow by window — not by dropping a
+sender. Prefer quoted phrases over bare words to avoid loose substring matches. Repeat for
+each account chosen in Step 1.
 
 ### Step 3 — Read and classify each match
 

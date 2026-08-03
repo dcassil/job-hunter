@@ -24,6 +24,26 @@ The current mechanism is the user's logged-in Chrome via the claude-in-chrome to
 integration can supply the same `{ from, subject, date, snippet/body }` records, and the
 classification + matching below stay unchanged.
 
+## Which account(s) to check
+
+A user may have more than one Gmail account (e.g. a dedicated job inbox plus a personal
+one). The working-folder `config.json` MAY carry an optional `email_accounts` array — each
+entry `{ "email": <address>, "authuser": <gmail index>, "primary": <bool?> }` — listing the
+inboxes to check and which Gmail `authuser` index each maps to (the number in
+`mail.google.com/mail/u/<authuser>/`). Selection:
+
+- If `email_accounts` is present, check the entry marked `primary` **first**, then sweep the
+  rest (the primary is where application/status mail is expected to land).
+- If it is absent, check whichever account the browser is currently on (today's behavior).
+- Navigate per account with the entry's `authuser` in the URL
+  (`mail.google.com/mail/u/<authuser>/#search/...`); if that account shows a
+  "Verify it's you" wall, STOP for that account and hand off to the user (never sign in) —
+  then continue with the others.
+
+`authuser` indices are per Chrome profile and machine-specific, so `email_accounts` stores
+the address alongside the index; treat the address as the source of truth and the index as
+a hint for URL navigation.
+
 ## Search scoping (never walk the inbox)
 
 The inbox is very high volume (100k+). NEVER enumerate it. Build ONE tightly scoped Gmail
@@ -45,10 +65,27 @@ search from three ingredients and a window, then read only those results:
 
 Assemble as a Gmail query, e.g.
 `newer_than:7d (from:(greenhouse.io OR lever.co OR ...) OR "thank you for applying" OR "next steps" OR <tracked company/recruiter names>)`,
-and navigate to `https://mail.google.com/mail/u/0/#search/<url-encoded-query>`. Keep the
-result set small; if it is still large, tighten (add `-category:promotions`, narrow the
-window, or search per tracked company). Beware loose substring matches (Gmail matches
-`for` inside "For You") — prefer quoted phrases and `from:` domains over bare words.
+and navigate to `https://mail.google.com/mail/u/<authuser>/#search/<url-encoded-query>`.
+Beware loose substring matches (Gmail matches `for` inside "For You") — prefer quoted
+phrases and `from:` domains over bare words.
+
+**Do NOT exclude job-board senders when hunting status changes.** LinkedIn (and to a lesser
+extent Indeed) **relays employer decisions** — the subject is "Your application to \<role\>
+at \<company\>" and the *body* carries the status ("we will not be moving forward" =
+rejection). Filtering out `from:linkedin.com` therefore hides real rejections/interviews.
+Separate recommendation noise by **classification** (below), not by excluding senders. The
+only safe narrowing is by distinctive status phrase and the window — never by dropping a
+sender you actually applied through.
+
+Run these **dedicated status searches** (across all senders, quoted phrases, within the
+window) in addition to the broad query, so decisions are never missed:
+
+- **Rejections:** `"will not be moving forward" OR "not be moving forward" OR "decided not to move forward" OR "move forward with other candidates" OR "will not be proceeding" OR "not selected" OR "regret to inform"`
+- **Interviews:** `"would like to schedule" OR "schedule an interview" OR "schedule a time" OR "invite you to" OR "phone screen" OR "next round" OR "set up a time" OR "interview invitation"`
+- **Offers:** `"pleased to offer" OR "extend an offer" OR "offer letter"`
+
+If any pass returns a large set, narrow by window (not by sender), and classify each hit by
+reading its body.
 
 ## Classification taxonomy
 
@@ -67,6 +104,20 @@ Read each matched message (sender, subject, body) and assign **exactly one** cla
 When a message is genuinely ambiguous between two classes (e.g. a soft "we'll keep your
 resume on file"), prefer the LESS consequential reading and flag it for the user rather
 than transitioning.
+
+**LinkedIn-relay rule (classify by BODY, not sender).** LinkedIn sends two look-alike
+emails whose subject is nearly identical — do not classify them by subject or sender:
+
+- Subject "Daniel, **your application was sent** to \<company\>" / "Your application to
+  \<role\> at \<company\>" **whose body acknowledges receipt** → `confirmation`.
+- Subject "Your application to \<role\> at \<company\>" **whose body says
+  "\<company\> … will not be moving forward with your application"** → `rejection`; body
+  inviting you to schedule/interview → `interview`; body offering the role → `offer`.
+
+Always open and read the body to decide. The sender being `linkedin.com` (or `indeed.com`)
+does NOT make it a `recommendation-alert` — only automated *discovery digests* ("jobs
+recommended for you", "you may be a good match", job-alert lists) are
+`recommendation-alert`.
 
 ## Job matching
 
