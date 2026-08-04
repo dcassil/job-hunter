@@ -46,7 +46,10 @@ and Markdown instructions. Skills are prompts/instructions, not a runtime progra
 - **Human-speed UI only for applying** — drive applications with real clicks/typing at a
   deliberate pace; never submit or fill via `fetch`/XHR/DOM injection (anti-bot-guard).
   `apply-to-jobs` (batch, with handoff) and `interactive-apply` (collaborative) share
-  [`references/custom-application.md`](references/custom-application.md).
+  [`references/custom-application.md`](references/custom-application.md). Both can, per run,
+  tailor each job's resume via the [`tailor-resume`](skills/tailor-resume/SKILL.md) worker
+  (freedom 0–10 + review mode), which requires the separate `resume-intelligence`
+  (`resume-kit`) plugin; see [`references/resume-kit.md`](references/resume-kit.md).
 - **Pre-answer gates on every field** — before answering, apply the
   [pre-answer gates](references/question-log.md#pre-answer-gates): a suspected
   AI/bot-detection trap/honeypot and any free-response/prose field are logged for the user

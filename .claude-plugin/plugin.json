@@ -1,6 +1,6 @@
 {
   "name": "job-hunter",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Search for jobs across LinkedIn, Indeed, Glassdoor and other boards, compile and manage a job list, and apply with rotating resumes/cover letters and saved application answers.",
   "dependencies": [
     {
