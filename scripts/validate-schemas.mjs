@@ -12,6 +12,10 @@ const read = (p) => JSON.parse(readFileSync(join(root, p), "utf8"));
 const pairs = [
   { schema: "schemas/config.schema.json", example: "schemas/examples/config.example.json" },
   { schema: "schemas/profile.schema.json", example: "schemas/examples/profile.example.json" },
+  {
+    schema: "schemas/resume-prefs.schema.json",
+    example: "schemas/examples/resume-prefs.example.json",
+  },
   { schema: "schemas/jobs.schema.json", example: "schemas/examples/jobs.example.json" },
 ];
 

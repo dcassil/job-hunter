@@ -12,6 +12,7 @@ required/optional status here are copied directly from:
 
 - [`../schemas/config.schema.json`](../schemas/config.schema.json)
 - [`../schemas/profile.schema.json`](../schemas/profile.schema.json)
+- [`../schemas/resume-prefs.schema.json`](../schemas/resume-prefs.schema.json)
 - [`../schemas/jobs.schema.json`](../schemas/jobs.schema.json)
 
 Worked examples that validate against these schemas live in
@@ -30,8 +31,10 @@ The canonical layout is:
 <working-folder>/
 ├── config.json          # preferences; presence marks a valid working folder
 ├── profile.json         # reusable applicant answers
+├── resume-prefs.json    # optional resume-tailoring learning state
 ├── job-focus.md         # free-form description of what the user is looking for
-├── resume/              # resume variant files (e.g. resume-a.pdf, resume-b.pdf)
+├── resume/              # resume variant files
+│   └── tailored/         # tailored outputs, e.g. <job-id>.<ext>
 ├── cover-letters/       # cover-letter variant files (e.g. cover-a.md, cover-b.md)
 └── jobs/
     ├── jobs.json        # canonical structured job list
@@ -44,6 +47,8 @@ The canonical layout is:
   that `resume_used` / `cover_used` and `resume_domains` refer to by id (see
   [Variant naming](#variant-naming)). File extensions are user-owned; the schemas
   only reference variants by id, never by path.
+- `resume/tailored/` holds tailored resume outputs for specific jobs, named by
+  job id and file extension, e.g. `resume/tailored/linkedin-3891.pdf`.
 
 ## Discovery contract
 
@@ -145,6 +150,61 @@ new application question is appended here (with `answered: false` and a `null`
 again.
 
 See [`../schemas/examples/profile.example.json`](../schemas/examples/profile.example.json).
+
+## resume-prefs.json
+
+Optional resume-tailoring learning state. Defined by
+[`../schemas/resume-prefs.schema.json`](../schemas/resume-prefs.schema.json). Its
+absence means no resume-tailoring learning has accumulated yet.
+
+`resume-prefs.json` is **not** the working-folder validity marker. A valid
+working folder is still identified by `config.json` as described in the
+[Discovery contract](#discovery-contract).
+
+Top-level fields:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `skills` | array of strings | Yes | Skills the user has explicitly confirmed they possess. |
+| `disclaimed_skills` | array of strings | No | Skills the user has explicitly said they do not have. |
+| `variants` | object | No | Maps a resume variant id to variant flags. |
+| `edit_prefs` | object | Yes | Acceptance tallies keyed by the schema's edit-type set. |
+
+Each `variants` entry is keyed by resume variant id, such as `resume-a`, and may
+record `ats_fixed` as a boolean. When `ats_fixed` is true for a variant, the
+tailoring flow treats the one-time structural ATS fix as already completed for
+that variant.
+
+`edit_prefs` is keyed by the closed edit-type set in the schema. The current
+types are:
+
+- `skill_add`: add a confirmed skill to improve fit.
+- `term_swap`: swap wording to match the job's terminology.
+- `bullet_rewrite`: rewrite one employment-history bullet.
+- `bullet_add`: add a new employment-history bullet.
+- `entry_rewrite`: rewrite a whole role or project entry.
+- `summary_rewrite`: rewrite the resume summary.
+- `reorder`: change ordering without changing substantive content.
+
+The schema is the authoritative source for the edit-type set and its allowed
+keys. Prose here explains the meaning; skills must validate against the schema
+instead of copying the list into another machine contract.
+
+Each edit-type value is a tally object with integer counters `accepted`,
+`accepted_with_edits`, and `rejected`. On review, increment exactly one counter
+for the edit type being reviewed:
+
+- User accepts the proposed edit as-is: increment `accepted`.
+- User accepts after modifying the edit: increment `accepted_with_edits`.
+- User rejects the proposed edit: increment `rejected`.
+
+The skills lists only grow from explicit user answers. When the tailoring flow
+asks whether the user has a skill and the user says yes, append that skill to
+`skills`. When the user says no, append it to `disclaimed_skills`. Do not infer
+either list from the resume or a job description without user confirmation.
+
+See
+[`../schemas/examples/resume-prefs.example.json`](../schemas/examples/resume-prefs.example.json).
 
 ## job-focus.md
 

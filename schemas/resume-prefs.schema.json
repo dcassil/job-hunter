@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://job-hunter/schemas/resume-prefs.schema.json",
+  "title": "job-hunter resume preferences",
+  "description": "Resume-tailoring learning state: confirmed skills, disclaimed skills, variant flags, and edit acceptance tallies.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["skills", "edit_prefs"],
+  "properties": {
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "disclaimed_skills": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "variants": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ats_fixed": { "type": "boolean" }
+        }
+      }
+    },
+    "edit_prefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skill_add": { "$ref": "#/definitions/tally" },
+        "term_swap": { "$ref": "#/definitions/tally" },
+        "bullet_rewrite": { "$ref": "#/definitions/tally" },
+        "bullet_add": { "$ref": "#/definitions/tally" },
+        "entry_rewrite": { "$ref": "#/definitions/tally" },
+        "summary_rewrite": { "$ref": "#/definitions/tally" },
+        "reorder": { "$ref": "#/definitions/tally" }
+      }
+    }
+  },
+  "definitions": {
+    "tally": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accepted": { "type": "integer", "minimum": 0 },
+        "accepted_with_edits": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
