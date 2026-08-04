@@ -1,7 +1,15 @@
 {
   "name": "job-hunter",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Search for jobs across LinkedIn, Indeed, Glassdoor and other boards, compile and manage a job list, and apply with rotating resumes/cover letters and saved application answers.",
+  "dependencies": [
+    {
+      "name": "resume-intelligence",
+      "marketplace_id": "resume-kit",
+      "required_for": "resume tailoring",
+      "note": "Separate install required via /plugin; see references/resume-kit.md."
+    }
+  ],
   "author": {
     "name": "Daniel Cassil",
     "email": "me@danielcassil.com"
