@@ -19,6 +19,9 @@ rotation from [`../../references/rotation.md`](../../references/rotation.md); an
 shapes from [`../../references/data-contract.md`](../../references/data-contract.md) and
 [`../../schemas/`](../../schemas/). Where this document and a schema disagree, the schema
 wins.
+Optional per-job resume tailoring is delegated to
+[`tailor-resume`](../tailor-resume/SKILL.md), with dependency gating from
+[`../../references/resume-kit.md`](../../references/resume-kit.md).
 
 ## Principles (non-negotiable)
 
@@ -40,6 +43,10 @@ wins.
   directly.
 - **The user chooses each job.** Nothing is opened or submitted without the user saying so
   for that specific job.
+- **Tailoring is attachment-only.** When the user requests per-run resume tailoring, this
+  skill prompts for the run settings, calls `tailor-resume`, and uses that worker's
+  envelope to pick the resume attachment. It does not duplicate tailoring logic, persist
+  tailoring defaults, or treat tailored files as rotation variants.
 - **Gates before actions.** Confirm a valid working folder before touching a browser.
 
 ## Gate: valid working folder
@@ -57,6 +64,24 @@ Resolve the working folder via `config.json`. Read `config.json`
 (`resume_strategy`, `resume_domains`, `round_robin_pointer`), `profile.json`
 (demographics, contact, logged_questions), `job-focus.md` (advisory domain context), and
 the resume/cover variant ids under `resume/` and `cover-letters/`.
+
+Before building the per-job queue, ask the per-run tailoring prompt:
+
+1. **Tailor resumes this run?** Accept `yes` / `no`.
+2. If yes, ask **degree of freedom?** Accept an integer `0`-`10`.
+3. If yes, ask **review mode?** Accept `interactive`, `review-after`, or `automatic`.
+
+Persist none of these answers. If tailoring is requested, probe resume-kit availability per
+[`resume-kit.md` detection](../../references/resume-kit.md#detection). If absent, show the
+exact guided-install hand-off:
+
+```text
+Resume tailoring needs the `resume-intelligence` plugin (marketplace `resume-kit`). Install it with `/plugin`, then re-run.
+```
+
+Then ask whether to stop so the user can install and restart, or continue this run
+untailored. If the user continues, set tailoring off for this run only and proceed with
+the base rotation resumes.
 
 ### Step 2 — Build the handoff queue
 
@@ -102,14 +127,45 @@ for this job. Honor pointer-persistence: `config.round_robin_pointer` advances (
 written back) ONLY when a round-robin slot is actually consumed by a confirmed submit. Do
 not tailor the cover letter — use a default only where a plain-text cover field exists.
 
+If tailoring is off for this run, the resume attachment is the base file for `resume_used`
+and the tailoring outcome is `not-tailored`.
+
+If tailoring is on, invoke [`tailor-resume`](../tailor-resume/SKILL.md) using its call
+contract:
+
+```json
+{
+  "working_dir": "/abs/path/to/working-folder",
+  "resume_variant_id": "resume_used",
+  "job": "<current job object>",
+  "freedom": "<0-10 run setting>",
+  "review_mode": "interactive | review-after | automatic"
+}
+```
+
+Use only the returned envelope to decide the attachment:
+
+- `tailored-pass` with `tailored_path` → attach `tailored_path`.
+- `skipped-strong` → attach the base file for `resume_used`.
+- `tailored-best-effort` / `declined` → follow the worker's user decision; if the envelope
+  includes `tailored_path` as the selected result, attach it, otherwise attach the base.
+- Any tailoring error, missing `tailored_path` for a tailored-pass, or provider/dependency
+  failure after the run gate → attach the base file, note the reason in the per-job
+  tailoring outcome, and continue the loop.
+
+Because this skill is collaborative, `interactive` and `review-after` tailoring review
+modes compose directly with this co-fill loop: any tailoring pause happens before opening
+or resuming the form, then the existing human-in-control submit behavior remains unchanged.
+
 #### 4c — Open and co-fill the application
 
 Open the application URL (the job `url`, or `handoff.application_url` / a saved draft when
 present) and follow
 [`custom-application.md`](../../references/custom-application.md): detect the ATS, and at
 human speed fill every field resolvable from `profile.json` via the
-[question log](../../references/question-log.md#lookup-order), attaching the rotation
-resume. Resume from a saved draft where one exists rather than re-entering.
+[question log](../../references/question-log.md#lookup-order), attaching the resume chosen
+in 4b (tailored file when the worker returned one to use, otherwise the base rotation
+resume). Resume from a saved draft where one exists rather than re-entering.
 
 For each field, apply the two
 [pre-answer gates](../../references/question-log.md#pre-answer-gates) first: if it could be
@@ -144,8 +200,9 @@ After each hand-off completes, continue filling the rest.
 When the form is complete, do the final submit as a real click (or, if the user prefers to
 click submit themselves, let them). Verify the success confirmation. Then call
 [`record-application`](../record-application/SKILL.md) with
-`{ id, status: "applied", resume_used, cover_used }`. On its success result, note the job
-as applied.
+`{ id, status: "applied", resume_used, cover_used }`, where `resume_used` is the base
+rotation variant id resolved in 4b even when a tailored file was attached. On its success
+result, note the job as applied.
 
 If the user stops partway (or an unresolved human-only step remains), do NOT submit. Call
 `record-application` with `status: "needs_human"` and an updated `handoff` capturing where
@@ -159,22 +216,27 @@ user, leave the job for later (or mark `skipped` on their say-so), and continue.
 ### Step 5 — Report
 
 Summarize the session: which jobs were applied (with resume/cover used), which were
-skipped, and which remain `needs_human` / `account_required` for next time. Remind the
-user the remaining ones stay in the queue and they can resume this skill whenever they
-like.
+skipped, and which remain `needs_human` / `account_required` for next time. Include each
+job's tailoring outcome (`not-tailored`, `skipped-strong`, `tailored-pass` with score when
+available, `tailored-best-effort`, `declined`, or degraded to base with reason). Remind the
+user the remaining ones stay in the queue and they can resume this skill whenever they like.
 
 ## Files this skill reads and writes
 
 - **Reads:** `<working_dir>/config.json`, `<working_dir>/jobs/jobs.json` (the handoff
   queue), `<working_dir>/profile.json` (via the question log), `<working_dir>/job-focus.md`,
-  the resume/cover variants, and the references/schemas above; the target application sites
-  via the claude-in-chrome tools.
+  `<working_dir>/resume-prefs.json` when tailoring is requested, the resume/cover variants,
+  and the references/schemas above; resume-kit capabilities per
+  [`resume-kit.md`](../../references/resume-kit.md) when tailoring is requested; the target
+  application sites via the claude-in-chrome tools.
 - **Writes directly:** `<working_dir>/profile.json` only — recording answers the user gives
   to unknown questions, via [`question-log.md`](../../references/question-log.md) — and,
   per [`rotation.md`](../../references/rotation.md#pointer-persistence), the
   `round_robin_pointer` field of `config.json` when a round-robin slot is consumed by a
   confirmed submit.
 - **Writes via workers:** all `jobs.json` / `jobs.md` state (status/application fields and
-  `handoff`) exclusively through [`record-application`](../record-application/SKILL.md).
+  `handoff`) exclusively through [`record-application`](../record-application/SKILL.md);
+  `<working_dir>/resume-prefs.json` and `<working_dir>/resume/tailored/` exclusively
+  through [`tailor-resume`](../tailor-resume/SKILL.md) when tailoring is requested.
 - **Never performs:** account creation, password entry, email reading, CAPTCHA solving, or
   payment — these are always handed to the user.
