@@ -1,0 +1,49 @@
+{
+  "skills": ["React", "TypeScript", "Node.js", "Terraform"],
+  "disclaimed_skills": ["Salesforce Apex"],
+  "variants": {
+    "resume-a": {
+      "ats_fixed": true
+    },
+    "resume-b": {
+      "ats_fixed": false
+    }
+  },
+  "edit_prefs": {
+    "skill_add": {
+      "accepted": 3,
+      "accepted_with_edits": 1,
+      "rejected": 0
+    },
+    "term_swap": {
+      "accepted": 5,
+      "accepted_with_edits": 0,
+      "rejected": 1
+    },
+    "bullet_rewrite": {
+      "accepted": 2,
+      "accepted_with_edits": 4,
+      "rejected": 1
+    },
+    "bullet_add": {
+      "accepted": 1,
+      "accepted_with_edits": 2,
+      "rejected": 0
+    },
+    "entry_rewrite": {
+      "accepted": 0,
+      "accepted_with_edits": 1,
+      "rejected": 3
+    },
+    "summary_rewrite": {
+      "accepted": 1,
+      "accepted_with_edits": 1,
+      "rejected": 1
+    },
+    "reorder": {
+      "accepted": 2,
+      "accepted_with_edits": 0,
+      "rejected": 0
+    }
+  }
+}
