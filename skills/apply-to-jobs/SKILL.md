@@ -55,6 +55,13 @@ appear to disagree, the schema wins.
 - **One status writer.** Only `record-application` changes a job's `status`,
   `applied_at`, `resume_used`, or `cover_used`. This skill NEVER edits `jobs.json` /
   `jobs.md` directly.
+- **Tailoring is attachment selection, not status or rotation.** When per-run resume
+  tailoring is enabled, this orchestrator only prompts, gates on resume-kit, invokes the
+  [`tailor-resume`](../tailor-resume/SKILL.md) worker using its
+  [call contract](../tailor-resume/SKILL.md#call-contract), and acts on the returned
+  envelope. It does not duplicate tailoring logic. `record-application` still receives the
+  base `resume_used` variant id selected by rotation; any tailored file is only the resume
+  attachment for that application.
 - **Gates before actions.** Confirm a valid working folder AND at least one new job
   before touching a browser.
 - **Stateless.** Discover all state from `config.json` every run; never rely on
@@ -108,6 +115,38 @@ confirmation. Default it to `config.automation_default`:
 Carry the resolved choice — call it the **run mode** (`auto` or `human`) — through every
 job below. It is the single switch that decides submit-vs-defer behavior.
 
+### Step 2b — tailoring choice
+
+Ask whether to tailor resumes for this run. This is a per-run choice only: persist nothing
+to `config.json` or anywhere else as a default.
+
+1. Ask: **tailor resumes this run?** (`y` / `n`).
+2. If `n`, set tailoring for this run to off. Every job's summary tailoring outcome is
+   `not tailored`.
+3. If `y`, ask for:
+   - **freedom**: an integer from `0` to `10`;
+   - **review mode**: one of `interactive`, `review-after`, or `automatic`.
+4. Only when tailoring is requested, gate on resume-kit per
+   [`references/resume-kit.md`](../../references/resume-kit.md). If absent, show the exact
+   guided-install hand-off from that reference:
+
+   ```text
+   Resume tailoring needs the `resume-intelligence` plugin (marketplace `resume-kit`). Install it with `/plugin`, then re-run.
+   ```
+
+   Then offer the user an explicit choice: install/re-run later, or continue this apply run
+   untailored. If they choose install/re-run, stop without creating partial application or
+   tailoring state. If they choose to continue untailored, turn tailoring off for this run
+   and mark every per-job tailoring outcome as `not tailored (resume-kit unavailable; user
+   continued untailored)`.
+
+The **tailoring review mode** is independent of the apply **run mode**. In `auto` run mode
+with tailoring review mode `interactive`, skipped-strong jobs run fully `auto` with no
+pause; jobs needing changes pause ONLY for edit approval inside `tailor-resume`, then resume
+`auto` behavior for field fill and the normal submit gate; `automatic` review mode never
+pauses. Pass the selected review mode through to the worker so any edit-approval pause lives
+inside it. This orchestrator's submit/defer behavior stays governed only by the run mode.
+
 ### Step 3 — Build the work list
 
 Collect every job with `status:"new"` from `jobs.json`. This is the ordered work list for
@@ -139,6 +178,40 @@ round-robin slot is actually consumed (the `round-robin` strategy, or `both` whe
 falls through to round-robin). That single field is the ONLY thing this skill may write to
 `config.json`; touch nothing else in it. Hold the returned ids to pass to
 `record-application` on submit.
+
+After the resolver returns, decide the resume attachment for this job:
+
+- Start with the base attachment for `resume_used` (or no resume attachment when
+  `resume_used` is `null`) and a tailoring outcome of `not tailored`.
+- If tailoring is off for this run or `resume_used` is `null`, do not call the worker.
+- If tailoring is on, call [`tailor-resume`](../tailor-resume/SKILL.md) exactly as a worker
+  using its [call contract](../tailor-resume/SKILL.md#call-contract):
+
+  ```json
+  {
+    "working_dir": "<absolute working_dir from config.json>",
+    "resume_variant_id": "<resume_used from rotation>",
+    "job": "<this job object>",
+    "freedom": "<Step 2b integer 0-10>",
+    "review_mode": "<Step 2b review mode>"
+  }
+  ```
+
+- Act only on the returned envelope:
+  - `tailored-pass` with `tailored_path` → attach `tailored_path`; summarize as
+    `tailored -> score <final_score>`.
+  - `skipped-strong` → attach the base resume; summarize as `skipped-strong` or
+    `skipped-strong (base score <original_score>)`.
+  - `tailored-best-effort` / `declined` → follow the worker's user decision when its
+    envelope includes a `tailored_path` to use; otherwise attach the base resume and
+    summarize as `best-effort -> score <final_score>` or `declined`.
+- If the tailoring call errors, returns an unusable envelope, or cannot produce an
+  attachment decision, degrade to the base resume, note the tailoring outcome as
+  `not tailored (tailoring error: <reason>)`, and continue the per-job defensive loop.
+
+Keep both values separate for the rest of the job: `resume_used` is the base variant id for
+rotation and `record-application`; the chosen resume attachment path is what 4c or 4x uploads
+to the application form.
 
 #### 4b — Open the posting and route by application type
 
@@ -186,8 +259,9 @@ log's [lookup order](../../references/question-log.md#lookup-order):
    `profile.logged_questions`. If a match is `answered:true` with a non-null `answer`,
    **reuse** it and fill the field.
 
-Attach the resolved resume file for `resume_used` and cover file for `cover_used` where
-the form has upload/text slots for them (skip an attachment whose id is `null`).
+Attach the chosen resume attachment from 4a and the cover file for `cover_used` where the
+form has upload/text slots for them (skip an attachment whose id is `null` or whose chosen
+path is absent).
 
 #### 4d — Handle unknown fields/questions (the guess boundary)
 
@@ -247,14 +321,15 @@ worker — the SOLE writer of pipeline status — with:
 {
   "id": "<this job's id>",
   "status": "applied",
-  "resume_used": "<from 4a, or null>",
+  "resume_used": "<base resume_used from 4a, or null>",
   "cover_used": "<from 4a, or null>"
 }
 ```
 
 `record-application` validates the `new → applied` transition, sets `applied_at` to
-today's date, writes `resume_used` / `cover_used`, and regenerates `jobs.md`. Do NOT
-write `jobs.json` or `jobs.md` yourself. Inspect its return: on
+today's date, writes the base `resume_used` variant id / `cover_used`, and regenerates
+`jobs.md`. Do NOT pass a tailored file path as `resume_used`; tailored files are
+attachments only. Do NOT write `jobs.json` or `jobs.md` yourself. Inspect its return: on
 `{ "id", "from", "to", "applied_at", "resume_used", "cover_used" }` mark the job
 `applied` in your summary. If it returns an error object
 (`{ "error": "no-working-folder" }`, `{ "error": "job-not-found" }`,
@@ -280,8 +355,8 @@ run — resolve each custom job to exactly one outcome and continue:
   leave it, handoff `needs: ["bot-check"]`; free-response/prose → leave it, handoff
   `needs: ["question"]`), and fill only fields that pass both from `profile.json` via the
   [question log](../../references/question-log.md#lookup-order) at human speed, attaching
-  the rotation resume for `resume_used` (skip cover tailoring; paste the default prose
-  cover only into an optional plain-text field). Then:
+  the chosen resume attachment from 4a (skip cover tailoring; paste the default prose cover
+  only into an optional plain-text field). Then:
   - **A human-only step is hit** (account / password / email-confirm / CAPTCHA /
     payment) **or** an **unknown question** appears (no answer in the profile; in this
     non-interactive batch you do NOT ask): do NOT guess and do NOT submit. Save a draft
@@ -301,27 +376,29 @@ prepared handoffs. Collect them for the Step 5 handoff queue.
 ### Step 5 — Report the run summary
 
 After the loop, print a summary listing every job worked and its outcome — `applied`,
-`deferred`, `needs_human`, `account_required`, or `skipped` — each with a reason, plus
-totals. Then print a **handoff queue**: the `needs_human` / `account_required` jobs, each
-with company, role, the `handoff.blocking` reason, and the URL to finish at. Remind the
-user that deferred jobs are still `status:"new"`, that unanswered logged questions can be
-resolved on a `human` run, that the handoff jobs are prepared and waiting, and that they
-can clear the handoff queue collaboratively by running the
+`deferred`, `needs_human`, `account_required`, or `skipped` — each with a reason, plus a
+per-job `tailoring` column/field (`not tailored`, `skipped-strong`,
+`tailored -> score X`, `best-effort`, or the base-fallback reason), plus totals. Then print
+a **handoff queue**: the `needs_human` / `account_required` jobs, each with company, role,
+the `handoff.blocking` reason, and the URL to finish at. Remind the user that deferred jobs
+are still `status:"new"`, that unanswered logged questions can be resolved on a `human`
+run, that the handoff jobs are prepared and waiting, and that they can clear the handoff
+queue collaboratively by running the
 [`interactive-apply`](../interactive-apply/SKILL.md) skill ("let's go through the ones you
 couldn't complete together"). The pipeline is reviewable in `jobs/jobs.md`.
 
 Suggested format:
 
 ```text
-Apply run — run mode: auto · new jobs worked: 6
+Apply run — run mode: auto · tailoring: interactive freedom 5 · new jobs worked: 6
 
 Per job:
-- linkedin-3891   Senior Backend Engineer @ Acme     : applied           (resume-b / cover-b)
-- indeed-1024     Platform Engineer @ Nimbus Labs     : deferred          (unanswered: "Desired salary?" — needs human run)
-- greenhouse-77   SRE @ Globex                        : needs_human       (account required to submit)
-- workday-88      Staff Eng @ Initech                 : account_required  (signup required before form is viewable)
-- linkedin-4002   Staff Engineer @ Hooli              : applied           (resume-a / cover-a)
-- lever-90        Frontend @ Vertex                   : skipped           (posting 404)
+- linkedin-3891   Senior Backend Engineer @ Acme     : applied           (resume-b / cover-b; tailoring: tailored -> score 86)
+- indeed-1024     Platform Engineer @ Nimbus Labs     : deferred          (resume-a / cover-a; tailoring: skipped-strong; unanswered: "Desired salary?" — needs human run)
+- greenhouse-77   SRE @ Globex                        : needs_human       (resume-c / cover-c; tailoring: best-effort -> base; account required to submit)
+- workday-88      Staff Eng @ Initech                 : account_required  (resume-b / cover-b; tailoring: not tailored; signup required before form is viewable)
+- linkedin-4002   Staff Engineer @ Hooli              : applied           (resume-a / cover-a; tailoring: skipped-strong)
+- lever-90        Frontend @ Vertex                   : skipped           (resume-c / cover-c; tailoring: not tailored (tailoring error: provider not configured); posting 404)
 
 Totals: 2 applied · 1 deferred · 1 needs_human · 1 account_required · 1 skipped
 
@@ -336,9 +413,12 @@ Handoff queue (finish these with `interactive-apply`):
   `resume_strategy`, `resume_domains`, `round_robin_pointer`),
   `<working_dir>/jobs/jobs.json` (the `status:"new"` work list),
   `<working_dir>/profile.json` (demographics, contact, logged_questions),
-  `<working_dir>/job-focus.md` (advisory domain context), the resume/cover variant files
-  under `<working_dir>/resume/` and `<working_dir>/cover-letters/`, and the
-  contracts/schemas in [`../../references/`](../../references/) and
+  `<working_dir>/job-focus.md` (advisory domain context), optional
+  `<working_dir>/resume-prefs.json` via `tailor-resume` when tailoring is enabled, the
+  resume/cover variant files under `<working_dir>/resume/` and
+  `<working_dir>/cover-letters/`, tailored resume files under
+  `<working_dir>/resume/tailored/` when returned by the worker, and the contracts/schemas in
+  [`../../references/`](../../references/) and
   [`../../schemas/`](../../schemas/).
 - **Writes directly:** `<working_dir>/profile.json` only — appending or answering logged
   questions via [`question-log.md`](../../references/question-log.md) — and, per
@@ -347,6 +427,10 @@ Handoff queue (finish these with `interactive-apply`):
   round-robin slot is consumed. It writes NOTHING else in `config.json`.
 - **Writes via workers:** `<working_dir>/jobs/jobs.json` and `<working_dir>/jobs/jobs.md`
   are written EXCLUSIVELY through the [`record-application`](../record-application/SKILL.md)
-  worker on a confirmed submission — never directly.
+  worker on a confirmed submission — never directly. When tailoring is enabled,
+  [`tailor-resume`](../tailor-resume/SKILL.md) may write
+  `<working_dir>/resume-prefs.json` and `<working_dir>/resume/tailored/` according to its
+  own contract.
 - **Dispatches:** the claude-in-chrome browser tools (open/fill posting) and the
-  `record-application` worker.
+  `record-application` worker; when tailoring is enabled, also dispatches the
+  [`tailor-resume`](../tailor-resume/SKILL.md) worker.
