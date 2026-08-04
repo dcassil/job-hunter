@@ -20,6 +20,8 @@ repeatable procedures to the two helper docs and do not duplicate their content:
   [`references/resume-analysis.md`](references/resume-analysis.md)
 - The board registry that drives which boards to offer for `config.sites`:
   [`../../references/job-boards.md`](../../references/job-boards.md)
+- Resume tailoring dependency gate:
+  [`../../references/resume-kit.md`](../../references/resume-kit.md)
 
 ## Principles (non-negotiable)
 
@@ -34,8 +36,8 @@ repeatable procedures to the two helper docs and do not duplicate their content:
 
 ## Gate: update mode vs. fresh setup
 
-Before anything else, determine the target folder (see Step 1) and check whether it
-already contains a `config.json` that validates against
+To decide between update mode and fresh setup, determine the target folder (see Step 1)
+and check whether it already contains a `config.json` that validates against
 [`../../schemas/config.schema.json`](../../schemas/config.schema.json):
 
 - **Valid `config.json` exists** → switch to **update mode**. Do NOT clobber. Read
@@ -50,6 +52,15 @@ already contains a `config.json` that validates against
   checklist starting at Step 1.
 
 ## Ordered wizard checklist
+
+### Preflight — Check resume-kit availability
+
+Run the advisory resume-kit detection gate in
+[`../../references/resume-kit.md`](../../references/resume-kit.md). This gate never
+aborts non-tailoring setup. If resume-kit is absent, cite the reference's
+guided-install hand-off, note that resume tailoring is unavailable until the
+dependency is installed, and carry that advisory result into
+[Step 11](#step-11--report).
 
 ### Step 1 — Choose the working-folder location
 
@@ -264,7 +275,8 @@ attempt it, and record the skip for the final report. Do not silently drop a boa
 ### Step 11 — Report
 
 Confirm to the user what was created, list the files written and their location, and
-include the preflight summary (which boards are reachable/logged in, and any skipped).
+include the resume-kit advisory result and the preflight summary (which boards are
+reachable/logged in, and any skipped).
 Tell them they can now run the search/apply skills — `apply-to-jobs` handles both
 LinkedIn Easy Apply and custom / non-Easy-Apply (ATS / company-site) applications,
 pausing on any step that needs them (account, password, email code, CAPTCHA) and logging

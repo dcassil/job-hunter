@@ -77,6 +77,11 @@ under `.metis/` — vision `JOBHUN-V-0001`; initiatives `JOBHUN-I-0001`…`0006`
 adds the apply-time bot-trap and free-response gates; `JOBHUN-I-0009` adds the
 `check-email-status` skill (email-based status tracking).
 
-## Requirements
+## Requirements / dependencies
 
 Claude Code with the claude-in-chrome browser tools, logged in to the relevant job sites.
+
+Resume tailoring depends on the separate `resume-intelligence` plugin (marketplace
+`resume-kit`). Install it with `/plugin` before using tailoring flows; the canonical
+detection, install hand-off, and capability map live in
+[`references/resume-kit.md`](references/resume-kit.md).
