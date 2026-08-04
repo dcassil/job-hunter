@@ -46,6 +46,10 @@ Workers (non-interactive):
   adapters driving your logged-in browser.
 - `add-job-to-list` — normalize + dedupe + append a listing.
 - `record-application` — status transitions + material bookkeeping (including `handoff`).
+- `tailor-resume` — invoked by the apply flows one job at a time to tailor a resume
+  variant to a posting under a degree-of-freedom ceiling and truth constraints; returns
+  "use the base as-is" or a per-job tailored file. Never opens a browser, submits, or
+  writes `jobs.json`. Requires the `resume-intelligence` plugin (`resume-kit`).
 
 **Safety invariant (all apply flows):** the agent never creates accounts, enters
 passwords, reads your email, solves CAPTCHAs, or enters payment details, and never
