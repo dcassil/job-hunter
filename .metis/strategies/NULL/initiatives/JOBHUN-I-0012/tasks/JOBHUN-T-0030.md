@@ -4,14 +4,14 @@ level: task
 title: "Author resume-prefs schema + example + validator wiring"
 short_code: "JOBHUN-T-0030"
 created_at: 2026-08-04T18:42:01.695578+00:00
-updated_at: 2026-08-04T18:42:01.695578+00:00
+updated_at: 2026-08-04T18:48:46.836094+00:00
 parent: JOBHUN-I-0012
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -32,6 +32,10 @@ Add `schemas/resume-prefs.schema.json` defining the new working-folder learning 
 edit-type enum), a worked `schemas/examples/resume-prefs.example.json` that validates, and
 extend `scripts/validate-schemas.mjs` to cover both. This is the substrate JOBHUN-I-0013
 reads and writes.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

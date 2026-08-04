@@ -4,14 +4,14 @@ level: initiative
 title: "resume-prefs learning substrate (known-skills + edit-acceptance memory)"
 short_code: "JOBHUN-I-0012"
 created_at: 2026-08-04T18:00:14.078274+00:00
-updated_at: 2026-08-04T18:41:47.823056+00:00
+updated_at: 2026-08-04T18:48:48.847988+00:00
 parent: JOBHUN-V-0001
 blocked_by: []
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/decompose"
+  - "#phase/completed"
 
 
 exit_criteria_met: false

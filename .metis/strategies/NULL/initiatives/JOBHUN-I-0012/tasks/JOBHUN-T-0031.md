@@ -4,14 +4,14 @@ level: task
 title: "Document resume-prefs.json in the data contract"
 short_code: "JOBHUN-T-0031"
 created_at: 2026-08-04T18:42:02.892422+00:00
-updated_at: 2026-08-04T18:42:02.892422+00:00
+updated_at: 2026-08-04T18:49:46.777299+00:00
 parent: JOBHUN-I-0012
 blocked_by: [JOBHUN-T-0030]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -31,6 +31,10 @@ Extend `references/data-contract.md` to document the new `resume-prefs.json` fil
 the working-folder layout diagram (plus the `resume/tailored/<job-id>.<ext>` output dir),
 add a section covering its fields, the edit-type taxonomy, the tally update rules, and the
 "not a validity marker" note.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

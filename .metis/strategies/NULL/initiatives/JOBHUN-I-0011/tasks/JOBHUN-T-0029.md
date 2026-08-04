@@ -4,14 +4,14 @@ level: task
 title: "Wire resume-kit gate into setup + document dependency + version bump"
 short_code: "JOBHUN-T-0029"
 created_at: 2026-08-04T18:42:00.706910+00:00
-updated_at: 2026-08-04T18:42:00.706910+00:00
+updated_at: 2026-08-04T18:49:45.218875+00:00
 parent: JOBHUN-I-0011
 blocked_by: [JOBHUN-T-0028]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -31,6 +31,10 @@ Add a resume-kit detection step to `job-hunter-setup` that surfaces the guided-i
 hand-off (from [[JOBHUN-T-0028]]) when the plugin is absent — advisory, without aborting the
 rest of setup — and document the dependency for humans (`README.md`) and machines (plugin
 manifest metadata). Bump the plugin version.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

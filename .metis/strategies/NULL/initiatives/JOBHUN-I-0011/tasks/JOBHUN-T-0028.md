@@ -4,14 +4,14 @@ level: task
 title: "Author references/resume-kit.md (detection, guided-install, capability map, gate contract)"
 short_code: "JOBHUN-T-0028"
 created_at: 2026-08-04T18:41:59.260408+00:00
-updated_at: 2026-08-04T18:41:59.260408+00:00
+updated_at: 2026-08-04T18:49:39.573773+00:00
 parent: JOBHUN-I-0011
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -33,6 +33,10 @@ skills detect the dependency, the exact guided-install hand-off when it is absen
 capability map binding each tailoring step to a resume-kit MCP tool + CLI subcommand, and the
 gate-usage contract that setup and the apply skills follow. This file is cited by
 JOBHUN-I-0012/13/14; no other skill restates its contents.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
