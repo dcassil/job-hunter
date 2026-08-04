@@ -4,14 +4,14 @@ level: initiative
 title: "Apply-skill integration: per-run tailoring prompt and tailor-resume wiring"
 short_code: "JOBHUN-I-0014"
 created_at: 2026-08-04T18:00:14.078274+00:00
-updated_at: 2026-08-04T18:00:14.078274+00:00
+updated_at: 2026-08-04T19:02:16.832945+00:00
 parent: JOBHUN-V-0001
 blocked_by: [JOBHUN-I-0013]
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/discovery"
+  - "#phase/decompose"
 
 
 exit_criteria_met: false
