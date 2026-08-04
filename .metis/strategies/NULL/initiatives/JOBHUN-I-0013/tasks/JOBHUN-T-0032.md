@@ -4,14 +4,14 @@ level: task
 title: "Author tailor-resume reference docs (pipeline, degree-of-freedom, edit-classifier)"
 short_code: "JOBHUN-T-0032"
 created_at: 2026-08-04T18:53:38.172084+00:00
-updated_at: 2026-08-04T18:54:43.710761+00:00
+updated_at: 2026-08-04T19:00:52.577302+00:00
 parent: JOBHUN-I-0013
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,8 @@ initiative_id: JOBHUN-I-0013
 Author the three reference docs under `skills/tailor-resume/references/` that the SKILL.md
 (JOBHUN-T-0033) cites, so the skill stays focused: `tailoring-pipeline.md`,
 `degree-of-freedom.md`, and `edit-classifier.md`.
+
+## Acceptance Criteria
 
 ## Acceptance Criteria
 

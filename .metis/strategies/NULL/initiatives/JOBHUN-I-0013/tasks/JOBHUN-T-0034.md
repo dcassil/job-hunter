@@ -4,14 +4,14 @@ level: task
 title: "Validate + register tailor-resume; npm run check green"
 short_code: "JOBHUN-T-0034"
 created_at: 2026-08-04T18:53:40.554704+00:00
-updated_at: 2026-08-04T18:53:40.554704+00:00
+updated_at: 2026-08-04T19:01:43.151772+00:00
 parent: JOBHUN-I-0013
 blocked_by: [JOBHUN-T-0033]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -29,6 +29,10 @@ initiative_id: JOBHUN-I-0013
 
 Ensure the new `tailor-resume` skill and its reference docs pass all repo guardrails and are
 registered wherever skills are indexed, and that the whole `npm run check` suite is green.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

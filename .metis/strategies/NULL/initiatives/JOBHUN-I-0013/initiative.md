@@ -4,14 +4,14 @@ level: initiative
 title: "tailor-resume worker skill (ATS fix, match-gate, evidence-constrained align, review modes, learning)"
 short_code: "JOBHUN-I-0013"
 created_at: 2026-08-04T18:00:14.078274+00:00
-updated_at: 2026-08-04T18:54:43.228688+00:00
+updated_at: 2026-08-04T19:01:43.945339+00:00
 parent: JOBHUN-V-0001
 blocked_by: [JOBHUN-I-0011, JOBHUN-I-0012]
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false

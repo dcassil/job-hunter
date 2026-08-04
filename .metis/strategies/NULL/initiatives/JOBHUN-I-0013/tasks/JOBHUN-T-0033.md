@@ -4,14 +4,14 @@ level: task
 title: "Author skills/tailor-resume/SKILL.md (call contract, gates, pipeline, review modes, learning)"
 short_code: "JOBHUN-T-0033"
 created_at: 2026-08-04T18:53:39.785963+00:00
-updated_at: 2026-08-04T18:53:39.785963+00:00
+updated_at: 2026-08-04T19:01:42.125494+00:00
 parent: JOBHUN-I-0013
 blocked_by: [JOBHUN-T-0032]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0013
 Author `skills/tailor-resume/SKILL.md`: the worker skill implementing the call contract,
 gates, pipeline orchestration, degree-of-freedom bounding, three review modes, skills-vetting,
 truth validation, and learning updates, citing the JOBHUN-T-0032 reference docs.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
