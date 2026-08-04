@@ -4,14 +4,14 @@ level: task
 title: "Docs + file-list updates + version bump + npm run check (I-0014)"
 short_code: "JOBHUN-T-0037"
 created_at: 2026-08-04T19:02:23.899438+00:00
-updated_at: 2026-08-04T19:02:23.899438+00:00
+updated_at: 2026-08-04T19:08:12.174904+00:00
 parent: JOBHUN-I-0014
 blocked_by: [JOBHUN-T-0035, JOBHUN-T-0036]
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0014
 Finish I-0014: update human-facing docs and the two apply skills' "Files this skill reads and
 writes" sections to mention tailoring / `resume-prefs.json` / `resume/tailored/`, bump the
 plugin version, and confirm the whole guardrail suite is green.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

@@ -4,14 +4,14 @@ level: task
 title: "Wire tailoring into interactive-apply (prompt, gate, per-job call)"
 short_code: "JOBHUN-T-0036"
 created_at: 2026-08-04T19:02:22.704855+00:00
-updated_at: 2026-08-04T19:02:22.704855+00:00
+updated_at: 2026-08-04T19:05:55.393480+00:00
 parent: JOBHUN-I-0014
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0014
 Wire the `tailor-resume` worker into `skills/interactive-apply/SKILL.md`: add the per-run
 tailoring prompt, the tailoring-only resume-kit gate, and the per-job worker call at material
 resolution (Step 4b), attaching the tailored file for the co-fill.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 

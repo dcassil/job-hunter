@@ -4,14 +4,14 @@ level: task
 title: "Wire tailoring into apply-to-jobs (prompt, gate, per-job call, auto×interactive, summary)"
 short_code: "JOBHUN-T-0035"
 created_at: 2026-08-04T19:02:21.225617+00:00
-updated_at: 2026-08-04T19:02:21.225617+00:00
+updated_at: 2026-08-04T19:07:06.858884+00:00
 parent: JOBHUN-I-0014
 blocked_by: []
 archived: false
 
 tags:
   - "#task"
-  - "#phase/todo"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
@@ -30,6 +30,10 @@ initiative_id: JOBHUN-I-0014
 Wire the `tailor-resume` worker into `skills/apply-to-jobs/SKILL.md`: add the per-run
 tailoring prompt, the tailoring-only resume-kit gate, the per-job worker call at material
 resolution, the run-mode × review-mode composition, and the tailoring outcome in the summary.
+
+## Acceptance Criteria
+
+## Acceptance Criteria
 
 ## Acceptance Criteria **[REQUIRED]**
 
