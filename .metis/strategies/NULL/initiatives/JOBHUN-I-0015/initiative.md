@@ -4,14 +4,14 @@ level: initiative
 title: "Terminology alignment + project alias index in the apply flow"
 short_code: "JOBHUN-I-0015"
 created_at: 2026-08-05T00:33:38.568006+00:00
-updated_at: 2026-08-05T04:01:35.904059+00:00
+updated_at: 2026-08-06T18:10:43.964435+00:00
 parent: JOBHUN-V-0001
 blocked_by: []
 archived: false
 
 tags:
   - "#initiative"
-  - "#phase/active"
+  - "#phase/completed"
 
 
 exit_criteria_met: false
