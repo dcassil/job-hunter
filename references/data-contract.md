@@ -36,6 +36,10 @@ The canonical layout is:
 ├── resume/              # resume variant files
 │   └── tailored/         # tailored outputs, e.g. <job-id>.<ext>
 ├── cover-letters/       # cover-letter variant files (e.g. cover-a.md, cover-b.md)
+├── resume-kit/          # resume-kit working dir (see "resume-kit alias index")
+│   ├── config.json       # resume-kit pointers incl. alias_file
+│   └── learning/
+│       └── synonyms.json # project alias index (grown only by resume-kit's manage-synonyms)
 └── jobs/
     ├── jobs.json        # canonical structured job list
     └── jobs.md          # generated human-readable mirror of jobs.json
@@ -205,6 +209,28 @@ either list from the resume or a job description without user confirmation.
 
 See
 [`../schemas/examples/resume-prefs.example.json`](../schemas/examples/resume-prefs.example.json).
+
+## resume-kit alias index
+
+The `<working-folder>/resume-kit/` subtree is state **owned by the resume-kit dependency**, used
+by the tailoring pipeline so learned synonyms count deterministically on future runs. It is
+distinct from the job-hunter state above (it has no job-hunter JSON Schema; its shape is resume-kit's
+contract — see [`resume-kit.md`](resume-kit.md#terminology-mirroring--the-alias-index)).
+
+- **`resume-kit/config.json`** — resume-kit's own pointer file. The tailoring pipeline ensures it
+  carries `"alias_file": "learning/synonyms.json"` (resolved against `resume-kit/`, not the shell
+  CWD). It may also hold resume-kit's `active_resume` / `active_job` pointers.
+- **`resume-kit/learning/synonyms.json`** — the **project alias index**, shape
+  `{"version":1,"aliases":{<canonical>:[<alias>,...]},"justifications":{...}}`. Keyword-aware
+  scoring UNIONs it over resume-kit's packaged seed lexicon when passed as `alias_file`.
+
+**Single-writer rule.** job-hunter writes **only** the empty shell
+(`{"version":1,"aliases":{},"justifications":{}}`) and the `config.json` `alias_file` pointer, and
+only to bootstrap them if absent (idempotent, create-if-absent, never overwrite). Every subsequent
+append is made **exclusively** by resume-kit's `manage-synonyms` skill (proposes → truth-gates →
+asks the user → appends). No job-hunter skill ever edits `synonyms.json` content. The index is
+per-working-folder (learning stays scoped to this folder's resumes/domain), not a shared global
+file.
 
 ## job-focus.md
 

@@ -1,9 +1,9 @@
 # Edit classifier
 
-This reference defines how the [`tailor-resume`](../SKILL.md) worker turns the
-output of `align-resume` into a list of **typed, individually reviewable edits**,
-how each edit is presented under each review mode, and how a review decision maps
-to a learning tally in `resume-prefs.json`.
+This reference defines how the [`tailor-resume`](../SKILL.md) worker handles the
+**typed, individually reviewable edits** produced by the no-LLM content path, how
+each edit is presented under each review mode, and how a review decision maps to a
+learning tally in `resume-prefs.json`.
 
 The edit-types are exactly the closed set in
 [`../../../schemas/resume-prefs.schema.json`](../../../schemas/resume-prefs.schema.json)
@@ -17,54 +17,52 @@ where this document and the schema disagree, the schema wins.
 
 ## Input to the classifier
 
-The classifier takes two things:
+The classifier takes a set of **already-typed candidate edits** emitted by the
+no-LLM content path (see
+[`tailoring-pipeline.md`](./tailoring-pipeline.md)):
 
-- the **base** resume — the structured resume for the chosen variant (from
-  `extract-resume`, or the base as resolved in the pipeline), and
-- the **aligned** resume — `align-resume`'s `aligned_resume` for this job,
-  produced under evidence constraints.
+- from `inject-keywords` (Step 8a): `skill_add` edits (a confirmed skill added to
+  the skills list) and `bullet_add` edits (a genuinely-held keyword woven into an
+  existing bullet), each produced under the Step 7 evidence constraints, and
+- from `update-terminology` / `resume_suggest_terminology` (Step 8b): `term_swap`
+  edits (mirror the employer's exact wording for an alias the resume already
+  satisfies).
 
-`align-resume` is a single opaque rewrite; the worker never trusts it as the final
-answer. The classifier exists precisely so the diff can be bounded by freedom,
-learned preferences, and truth — none of which a single rewrite provides.
+Each edit already records its location (section / entry / bullet), its before
+text, its after text, and its edit-type — the tools emit discrete edits, so there
+is **no opaque rewrite to diff**. The classifier's job is to bound those edits by
+freedom, learned preferences, and truth before any of them ship.
 
-## Diffing aligned vs. base
+## The edit-type set
 
-Compare the aligned resume against the base **section by section** — summary,
-skills list, and each employment/project entry with its bullets — and emit one
-**change** per discrete difference. A change records: the location (section /
-entry / bullet), the before text, the after text, and the assigned edit-type.
+Every edit carries exactly one edit-type from the schema's closed set. The no-LLM
+path generates only this subset:
 
-## Assigning an edit-type
-
-Assign each change exactly one edit-type from the schema's closed set, by the
-nature of the difference:
-
-| Observed difference | Edit-type |
+| Edit produced by the no-LLM path | Edit-type |
 | --- | --- |
-| A skill added to the skills list | `skill_add` |
-| Wording changed to the job's terminology, same underlying claim | `term_swap` |
-| An existing bullet's text rewritten | `bullet_rewrite` |
-| A new bullet added to an existing entry | `bullet_add` |
-| A whole role/project entry rewritten | `entry_rewrite` |
-| The resume summary/objective rewritten | `summary_rewrite` |
-| Ordering changed with no substantive content change (skills, bullets, or sections) | `reorder` |
+| A skill added to the skills list (`inject-keywords`) | `skill_add` |
+| A new bullet weaving in a genuinely-held keyword (`inject-keywords`) | `bullet_add` |
+| Wording changed to the job's terminology, same underlying claim (`update-terminology`) | `term_swap` |
 
-Guidance for edge cases:
+The remaining schema/ladder edit-types — `bullet_rewrite`, `entry_rewrite`,
+`summary_rewrite`, and free-form `reorder` — required the LLM `align-resume`
+rewrite that is disabled in resume-kit v0.3.0, so **they are not produced by the
+current pipeline**. The schema and the freedom ladder deliberately keep them for
+forward-compatibility (a future LLM-rewrite initiative would re-enable them); until
+then no step emits them, and any stray edit that would map to one is dropped.
 
-- If a change is ambiguous between two types, assign the **higher** ladder type
-  (the more consequential one), so the freedom ceiling treats it conservatively.
-- A change that both rewrites wording *and* changes the claim is not a
-  `term_swap`; classify by the larger effect (`bullet_rewrite` /
-  `entry_rewrite`) so it faces the correct ceiling and the truth check.
-- A change that adds or alters a whole employment/project **entry's existence** is
-  not classifiable as any permitted edit — new employment entries are forbidden at
-  every level (see the invariants in
-  [`degree-of-freedom.md`](./degree-of-freedom.md#invariants-at-every-level)) —
-  and is dropped.
+Validation notes that still apply:
 
-After classification the pipeline drops every change above the freedom ceiling and
-every change violating an invariant, then runs the survivors through
+- A `term_swap` that both rewrites wording *and* changes the underlying claim is
+  not a truthful mirror — the engine truth-gate (`resume_align_terminology` /
+  `validate-resume-truth`) rejects it, and it never ships.
+- An edit that would add or alter a whole employment/project **entry's existence**
+  is forbidden at every level (see the invariants in
+  [`degree-of-freedom.md`](./degree-of-freedom.md#invariants-at-every-level)) and
+  is dropped.
+
+After typing, the pipeline drops every edit above the freedom ceiling and every
+edit violating an invariant, then runs the survivors through
 `validate-resume-truth` (see
 [`tailoring-pipeline.md`](./tailoring-pipeline.md)).
 
@@ -78,8 +76,9 @@ before → after diff.
   order (below). For each, ask the user to **accept** / **accept-with-edits** /
   **reject**. `accept-with-edits` lets the user modify the after-text before it is
   applied; the modified text is what ships (and is itself re-validated for truth).
-  Ordering the aligner with `human_in_loop` is appropriate for this mode per
-  resume-kit's own option surface.
+  For `term_swap` edits this per-suggestion accept/skip mirrors
+  `update-terminology`'s own review loop, but the worker drives it here so the swap
+  stays bound by the freedom ceiling, learned `edit_prefs`, and the truth gate.
 - **review-after** — apply the permitted, truth-passing, high-acceptance changes
   first (see learning below), then present a **single final diff pass** of
   everything applied so the user can accept the batch or send specific changes

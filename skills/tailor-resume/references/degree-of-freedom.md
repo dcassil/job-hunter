@@ -17,10 +17,11 @@ are not restated here.
 ## What the ladder is for
 
 The freedom number is how far the user has authorized the worker to reshape the
-resume for a job. It is **not** enforced by asking `align-resume` nicely — it is
-enforced by classifying the produced diff (see
-[`edit-classifier.md`](./edit-classifier.md)) into typed edits and **dropping every
-edit whose type is above the freedom ceiling** before any apply or review. The
+resume for a job. It is **not** enforced by asking a content tool nicely — it is
+enforced by typing every candidate edit the no-LLM path produces (from
+`inject-keywords` / `update-terminology`; see
+[`edit-classifier.md`](./edit-classifier.md)) and **dropping every edit whose type
+is above the freedom ceiling** before any apply or review. The
 ladder is the ceiling; learned preferences and review mode (see
 [`tailoring-pipeline.md`](./tailoring-pipeline.md)) may narrow what is applied
 *within* the ceiling, but never widen it.

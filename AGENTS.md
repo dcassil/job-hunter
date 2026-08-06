@@ -50,6 +50,10 @@ and Markdown instructions. Skills are prompts/instructions, not a runtime progra
   tailor each job's resume via the [`tailor-resume`](skills/tailor-resume/SKILL.md) worker
   (freedom 0–10 + review mode), which requires the separate `resume-intelligence`
   (`resume-kit`) plugin; see [`references/resume-kit.md`](references/resume-kit.md).
+  Tailoring is **no-LLM** as of resume-kit v0.3.0 (`align-resume` is disabled): edits come
+  from `inject-keywords` (missing-but-true keywords) and `update-terminology` (wording
+  mirrors), governed by the freedom/review/truth machinery, with a per-working-folder alias
+  index under `<working_dir>/resume-kit/` (grown only by resume-kit's `manage-synonyms`).
 - **Pre-answer gates on every field** — before answering, apply the
   [pre-answer gates](references/question-log.md#pre-answer-gates): a suspected
   AI/bot-detection trap/honeypot and any free-response/prose field are logged for the user

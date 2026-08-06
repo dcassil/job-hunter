@@ -23,8 +23,9 @@ cites:
   [`references/tailoring-pipeline.md`](./references/tailoring-pipeline.md);
 - the freedom → permitted-edit-type ladder and the every-level invariants →
   [`references/degree-of-freedom.md`](./references/degree-of-freedom.md);
-- diffing `align-resume`'s output into typed edits, presenting per review mode, and
-  the tally updates → [`references/edit-classifier.md`](./references/edit-classifier.md).
+- handling the typed edits emitted by the no-LLM content path (`inject-keywords`,
+  `update-terminology`), presenting per review mode, and the tally updates →
+  [`references/edit-classifier.md`](./references/edit-classifier.md).
 
 Resume-kit capability/tool names come from
 [`../../references/resume-kit.md`](../../references/resume-kit.md); the edit-type
@@ -47,8 +48,9 @@ document and a schema disagree, the schema wins.
   validated against evidence built from the master resume plus confirmed skills;
   unsupported or contradicted edits are dropped, regardless of freedom or learned
   acceptance.
-- **Freedom is enforced by classifying the diff, not by trusting the aligner.**
-  Edits above the caller's freedom ceiling are dropped before any apply or review.
+- **Freedom is enforced by typing each candidate edit, no matter its source.**
+  Edits from `inject-keywords` / `update-terminology` above the caller's freedom
+  ceiling are dropped before any apply or review.
 - **Human-in-control.** The user's `review_mode` strictly bounds interaction, and a
   sub-target ("best-effort") tailoring is never silently shipped — the user is
   asked, or automatic mode falls back to base.
@@ -61,9 +63,11 @@ document and a schema disagree, the schema wins.
   `resume/tailored/` files, and invokes `update-resumes` only on a confirmed
   structural replace of a base variant. It NEVER writes `jobs.json` / `jobs.md`
   (only `record-application` does) and never writes `config.json`.
-- **Defensive, never fabricating to recover.** A resume-kit error or a
-  `PROVIDER_NOT_CONFIGURED` result degrades to a clear message and a safe fallback
-  (use the base as-is), never a guessed or partial resume.
+- **Defensive, never fabricating to recover.** A resume-kit error degrades to a
+  clear message and a safe fallback (use the base as-is); a failed terminology or
+  index-growth step is skipped with a noted reason. The content path is fully
+  no-LLM, so there is no provider-configuration failure mode. Never a guessed or
+  partial resume.
 - **Gate before acting.** Confirm the resume-kit dependency and a valid working
   folder before doing any tailoring work.
 
@@ -146,57 +150,77 @@ Run the ordered pipeline in
 1. **Gate** resume-kit + working folder (above).
 2. **Resolve** the base variant file for `resume_variant_id` under
    `<working_dir>/resume/`.
-3. **Once-per-variant structural fix** — if
+3. **Convert once + bootstrap alias index** — convert the base resume to a
+   `ResumeDocument` once per job via the agent-driven `resume-to-json` skill
+   (subagent; not `resume_extract`) and the job via `job-to-json`, reused across
+   this job's calls (REQ-006). Ensure `<working_dir>/resume-kit/config.json`
+   (`alias_file` → `learning/synonyms.json`) and the empty-shell
+   `learning/synonyms.json` exist (create if absent; shell + pointer only) (REQ-001).
+4. **Once-per-variant structural fix** — if
    `resume-prefs.json.variants[<id>].ats_fixed` is not already `true`, run
-   `extract-resume` + `check-resume-ats`; if structural issues exist, produce a
-   fix via `export-resume`, show the user, and replace the **base** variant only
-   with explicit confirmation via [`update-resumes`](../update-resumes/SKILL.md),
-   then set `ats_fixed` (REQ-003).
-4. **Match-gate** — `check-resume-job-match` on the base is `original_score`; if
-   `>= 90`, return `skipped-strong` with no tailoring and **no interaction**
-   (REQ-004, REQ-010). At `freedom 0`, propose no edits and return with the base.
-5. **Gaps** — `identify-resume-gaps` (base as tailored, master as full, job).
-6. **Skills vetting** — vet injectable keywords against `skills` /
+   `check-ats-structure` (structure-only, no `alias_file`) on the converted
+   document; if structural issues exist, produce a fix via `export-resume`, show the
+   user, and replace the **base** variant only with explicit confirmation via
+   [`update-resumes`](../update-resumes/SKILL.md), then set `ats_fixed` (REQ-003).
+5. **Match-gate** — `check-resume-job-match` (with `alias_file`) on the base is
+   `original_score`; if `>= 90`, return `skipped-strong` with no tailoring and **no
+   interaction** (REQ-004, REQ-010). At `freedom 0`, propose no edits and return
+   with the base.
+6. **Gaps** — `identify-resume-gaps` (with `alias_file`; base as tailored, master
+   as full, job).
+7. **Skills vetting** — vet injectable keywords against `skills` /
    `disclaimed_skills`; an unknown implied skill triggers **"Do you have <X>
    experience?"**; yes → append to `skills`, no → append to `disclaimed_skills`
    (never injected, never re-asked) (REQ-005).
-7. **Evidence** — `build-candidate-evidence` from the master resume + confirmed
+8. **Grow the alias index** (interactive / review-after only; **skipped in
+   automatic**) — dispatch `manage-synonyms` (subagent) with the candidate
+   `(missing keyword, resume term)` pairs + the `resume-kit/config.json` path; on
+   user-confirmed appends, re-run match / gaps with `alias_file` so new synonyms
+   count this run (REQ-004). `manage-synonyms` is the sole writer of `synonyms.json`.
+9. **Evidence** — `build-candidate-evidence` from the master resume + confirmed
    `skills`.
-8. **Align** — `align-resume` (evidence-constrained; request human-in-loop in
-   `interactive` mode).
-9. **Classify + gate by freedom + order by prefs** — diff aligned vs. base into
-   typed edits ([`edit-classifier.md`](./references/edit-classifier.md)), drop
-   everything above the freedom ceiling and every invariant violation (REQ-006),
-   then order / auto-apply / defer by learned `edit_prefs` and `review_mode`
-   (REQ-009).
-10. **Truth check** — `validate-resume-truth`; drop every unsupported/contradicted
+10. **Inject missing-but-true keywords** — dispatch `inject-keywords` (subagent)
+    with the injectable gaps + confirmed `skills` + evidence; it emits `skill_add` /
+    `bullet_add` candidate edits, never for unknown/disclaimed skills (REQ-009).
+11. **Mirror employer wording** — `resume_suggest_terminology` (with `alias_file`)
+    yields `term_swap` candidate edits; apply each accepted, surviving one with
+    `resume_align_terminology` (engine truth-gated) (REQ-003).
+12. **Classify + gate by freedom + order by prefs** — take the already-typed edits
+    from the inject and mirror steps
+    ([`edit-classifier.md`](./references/edit-classifier.md)), drop everything above
+    the freedom ceiling and every invariant violation (REQ-006), then order /
+    auto-apply / defer by learned `edit_prefs` and `review_mode` (REQ-009).
+13. **Truth check** — `validate-resume-truth`; drop every unsupported/contradicted
     edit (REQ-007). Re-validate any `accept-with-edits` text before it ships.
-11. **Rescore** — apply survivors, then `check-resume-job-match` on the result for
-    `final_score` (REQ-008).
-12. **Rescore gate** — `final_score >= 80` AND `> original_score` ⇒
+14. **Rescore** — apply survivors, then `check-resume-job-match` (with `alias_file`)
+    on the result for `final_score` (REQ-008).
+15. **Rescore gate** — `final_score >= 80` AND `> original_score` ⇒
     `tailored-pass`; else `tailored-best-effort`: **ask** whether to use the
     tailored resume or fall back to base (interactive / review-after), or **fall
     back to base** unattended (automatic). Never silently ship a sub-target resume
     (REQ-008).
-13. **Export** — `export-resume` to
+16. **Export** — `export-resume` to
     `<working_dir>/resume/tailored/<job-id>.<ext>` (REQ-011). Never touch
     `jobs.json` / `jobs.md`.
-14. **Learning + return** — write `edit_prefs` tallies (one counter per human
+17. **Learning + return** — write `edit_prefs` tallies (one counter per human
     decision), any `skills` / `disclaimed_skills` / `ats_fixed` changes, and return
     the envelope.
 
 Review-mode behavior (interactive per-edit, review-after single final pass,
 automatic unattended with fallback), the "no edits ⇒ no pause" guarantee, and the
-degrade rules (resume-kit error or `PROVIDER_NOT_CONFIGURED` → clear message + safe
-fallback to base, never a fabricated resume) are all specified in the references
-and MUST be followed exactly (REQ-010, NFR-002, NFR-003).
+degrade rules (resume-kit error → clear message + safe fallback to base; a failed
+terminology / growth step is skipped with a noted reason; never a fabricated
+resume) are all specified in the references and MUST be followed exactly (REQ-010,
+NFR-002, NFR-003).
 
 ## Files this skill reads and writes
 
 - **Reads:** `<working_dir>/config.json` (discovery / working folder),
   `<working_dir>/resume/` (the base variant file for `resume_variant_id`),
   `<working_dir>/resume-prefs.json` (confirmed `skills`, `disclaimed_skills`,
-  `variants[...].ats_fixed`, `edit_prefs` tallies), `<working_dir>/profile.json`
+  `variants[...].ats_fixed`, `edit_prefs` tallies),
+  `<working_dir>/resume-kit/config.json` + `<working_dir>/resume-kit/learning/synonyms.json`
+  (the project alias index, passed as `alias_file`), `<working_dir>/profile.json`
   and `<working_dir>/job-focus.md` (advisory context), the `job` object passed in,
   and the references/schemas above; resume-kit capabilities per
   [`resume-kit.md`](../../references/resume-kit.md).
@@ -205,7 +229,10 @@ and MUST be followed exactly (REQ-010, NFR-002, NFR-003).
   `variants[<id>].ats_fixed` (once-per-variant structural fix), and `edit_prefs`
   tallies (one counter per human decision) — always leaving the file valid against
   [`../../schemas/resume-prefs.schema.json`](../../schemas/resume-prefs.schema.json);
-  and `<working_dir>/resume/tailored/<job-id>.<ext>` via `export-resume`.
+  `<working_dir>/resume/tailored/<job-id>.<ext>` via `export-resume`; and — only to
+  bootstrap them if absent — the empty-shell
+  `<working_dir>/resume-kit/learning/synonyms.json` + `resume-kit/config.json`
+  pointer (never its content; `manage-synonyms` is the sole content writer).
 - **Writes via workers:** the base variant file, ONLY on a confirmed structural
   replace, exclusively through [`update-resumes`](../update-resumes/SKILL.md).
 - **Never writes:** `jobs.json` / `jobs.md` (only `record-application` does) and

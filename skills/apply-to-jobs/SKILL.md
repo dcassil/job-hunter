@@ -139,6 +139,13 @@ to `config.json` or anywhere else as a default.
    tailoring state. If they choose to continue untailored, turn tailoring off for this run
    and mark every per-job tailoring outcome as `not tailored (resume-kit unavailable; user
    continued untailored)`.
+5. When tailoring is on and resume-kit is present, **bootstrap the project alias index**
+   (idempotent, create-if-absent): ensure `<working_dir>/resume-kit/config.json` carries
+   `"alias_file": "learning/synonyms.json"` and that `<working_dir>/resume-kit/learning/synonyms.json`
+   exists as the empty shell `{"version":1,"aliases":{},"justifications":{}}`. Write ONLY the
+   shell + pointer, never its content — `manage-synonyms` (inside `tailor-resume`) is the sole
+   content writer. See
+   [`data-contract.md`](../../references/data-contract.md#resume-kit-alias-index).
 
 The **tailoring review mode** is independent of the apply **run mode**. In `auto` run mode
 with tailoring review mode `interactive`, skipped-strong jobs run fully `auto` with no
@@ -205,6 +212,11 @@ After the resolver returns, decide the resume attachment for this job:
   - `tailored-best-effort` / `declined` → follow the worker's user decision when its
     envelope includes a `tailored_path` to use; otherwise attach the base resume and
     summarize as `best-effort -> score <final_score>` or `declined`.
+- From the envelope's `changes_applied`, also record the **terminology and injection
+  outcomes** for the summary: the count of `term_swap` edits applied (wording mirrors), the
+  count of `skill_add` / `bullet_add` edits (keywords injected), and any synonyms grown this
+  run (the worker reports these). Fold them into the job's tailoring outcome, e.g.
+  `tailored -> score 84 (2 term-swaps, 1 keyword injected, 1 synonym grown)`.
 - If the tailoring call errors, returns an unusable envelope, or cannot produce an
   attachment decision, degrade to the base resume, note the tailoring outcome as
   `not tailored (tailoring error: <reason>)`, and continue the per-job defensive loop.
@@ -378,7 +390,9 @@ prepared handoffs. Collect them for the Step 5 handoff queue.
 After the loop, print a summary listing every job worked and its outcome — `applied`,
 `deferred`, `needs_human`, `account_required`, or `skipped` — each with a reason, plus a
 per-job `tailoring` column/field (`not tailored`, `skipped-strong`,
-`tailored -> score X`, `best-effort`, or the base-fallback reason), plus totals. Then print
+`tailored -> score X`, `best-effort`, or the base-fallback reason) — including, when
+tailoring applied edits, the terminology/injection detail (term-swaps applied, keywords
+injected, synonyms grown), plus totals. Then print
 a **handoff queue**: the `needs_human` / `account_required` jobs, each with company, role,
 the `handoff.blocking` reason, and the URL to finish at. Remind the user that deferred jobs
 are still `status:"new"`, that unanswered logged questions can be resolved on a `human`
@@ -393,12 +407,12 @@ Suggested format:
 Apply run — run mode: auto · tailoring: interactive freedom 5 · new jobs worked: 6
 
 Per job:
-- linkedin-3891   Senior Backend Engineer @ Acme     : applied           (resume-b / cover-b; tailoring: tailored -> score 86)
+- linkedin-3891   Senior Backend Engineer @ Acme     : applied           (resume-b / cover-b; tailoring: tailored -> score 86; 2 term-swaps, 1 keyword injected, 1 synonym grown)
 - indeed-1024     Platform Engineer @ Nimbus Labs     : deferred          (resume-a / cover-a; tailoring: skipped-strong; unanswered: "Desired salary?" — needs human run)
 - greenhouse-77   SRE @ Globex                        : needs_human       (resume-c / cover-c; tailoring: best-effort -> base; account required to submit)
 - workday-88      Staff Eng @ Initech                 : account_required  (resume-b / cover-b; tailoring: not tailored; signup required before form is viewable)
 - linkedin-4002   Staff Engineer @ Hooli              : applied           (resume-a / cover-a; tailoring: skipped-strong)
-- lever-90        Frontend @ Vertex                   : skipped           (resume-c / cover-c; tailoring: not tailored (tailoring error: provider not configured); posting 404)
+- lever-90        Frontend @ Vertex                   : skipped           (resume-c / cover-c; tailoring: not tailored (tailoring error: resume-kit call failed); posting 404)
 
 Totals: 2 applied · 1 deferred · 1 needs_human · 1 account_required · 1 skipped
 
@@ -424,7 +438,11 @@ Handoff queue (finish these with `interactive-apply`):
   questions via [`question-log.md`](../../references/question-log.md) — and, per
   [`rotation.md`](../../references/rotation.md#pointer-persistence), the
   `round_robin_pointer` field of `<working_dir>/config.json` when (and only when) a
-  round-robin slot is consumed. It writes NOTHING else in `config.json`.
+  round-robin slot is consumed. It writes NOTHING else in `config.json`. When tailoring is
+  on, it may bootstrap the empty-shell `<working_dir>/resume-kit/learning/synonyms.json` +
+  `resume-kit/config.json` `alias_file` pointer if absent (shell + pointer only, idempotent);
+  it never writes `synonyms.json` content (`manage-synonyms` inside `tailor-resume` is the
+  sole content writer).
 - **Writes via workers:** `<working_dir>/jobs/jobs.json` and `<working_dir>/jobs/jobs.md`
   are written EXCLUSIVELY through the [`record-application`](../record-application/SKILL.md)
   worker on a confirmed submission — never directly. When tailoring is enabled,

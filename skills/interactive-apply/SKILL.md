@@ -83,6 +83,14 @@ Then ask whether to stop so the user can install and restart, or continue this r
 untailored. If the user continues, set tailoring off for this run only and proceed with
 the base rotation resumes.
 
+When tailoring is on and resume-kit is present, **bootstrap the project alias index**
+(idempotent, create-if-absent): ensure `<working_dir>/resume-kit/config.json` carries
+`"alias_file": "learning/synonyms.json"` and that
+`<working_dir>/resume-kit/learning/synonyms.json` exists as the empty shell
+`{"version":1,"aliases":{},"justifications":{}}`. Write ONLY the shell + pointer, never its
+content — `manage-synonyms` (inside `tailor-resume`) is the sole content writer. See
+[`data-contract.md`](../../references/data-contract.md#resume-kit-alias-index).
+
 ### Step 2 — Build the handoff queue
 
 Read `<working_dir>/jobs/jobs.json`. The queue is every job that needs the user, newest
@@ -149,7 +157,10 @@ Use only the returned envelope to decide the attachment:
 - `skipped-strong` → attach the base file for `resume_used`.
 - `tailored-best-effort` / `declined` → follow the worker's user decision; if the envelope
   includes `tailored_path` as the selected result, attach it, otherwise attach the base.
-- Any tailoring error, missing `tailored_path` for a tailored-pass, or provider/dependency
+- From the envelope's `changes_applied`, record the terminology/injection outcomes for the
+  summary: term-swaps applied (`term_swap`), keywords injected (`skill_add` / `bullet_add`),
+  and any synonyms grown this run.
+- Any tailoring error, missing `tailored_path` for a tailored-pass, or dependency
   failure after the run gate → attach the base file, note the reason in the per-job
   tailoring outcome, and continue the loop.
 
@@ -218,8 +229,10 @@ user, leave the job for later (or mark `skipped` on their say-so), and continue.
 Summarize the session: which jobs were applied (with resume/cover used), which were
 skipped, and which remain `needs_human` / `account_required` for next time. Include each
 job's tailoring outcome (`not-tailored`, `skipped-strong`, `tailored-pass` with score when
-available, `tailored-best-effort`, `declined`, or degraded to base with reason). Remind the
-user the remaining ones stay in the queue and they can resume this skill whenever they like.
+available, `tailored-best-effort`, `declined`, or degraded to base with reason) — and, when
+tailoring applied edits, the terminology/injection detail (term-swaps applied, keywords
+injected, synonyms grown). Remind the user the remaining ones stay in the queue and they can
+resume this skill whenever they like.
 
 ## Files this skill reads and writes
 
@@ -233,7 +246,10 @@ user the remaining ones stay in the queue and they can resume this skill wheneve
   to unknown questions, via [`question-log.md`](../../references/question-log.md) — and,
   per [`rotation.md`](../../references/rotation.md#pointer-persistence), the
   `round_robin_pointer` field of `config.json` when a round-robin slot is consumed by a
-  confirmed submit.
+  confirmed submit. When tailoring is on, it may bootstrap the empty-shell
+  `<working_dir>/resume-kit/learning/synonyms.json` + `resume-kit/config.json` `alias_file`
+  pointer if absent (shell + pointer only, idempotent); never `synonyms.json` content
+  (`manage-synonyms` inside `tailor-resume` is the sole content writer).
 - **Writes via workers:** all `jobs.json` / `jobs.md` state (status/application fields and
   `handoff`) exclusively through [`record-application`](../record-application/SKILL.md);
   `<working_dir>/resume-prefs.json` and `<working_dir>/resume/tailored/` exclusively

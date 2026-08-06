@@ -48,8 +48,11 @@ Workers (non-interactive):
 - `record-application` — status transitions + material bookkeeping (including `handoff`).
 - `tailor-resume` — invoked by the apply flows one job at a time to tailor a resume
   variant to a posting under a degree-of-freedom ceiling and truth constraints; returns
-  "use the base as-is" or a per-job tailored file. Never opens a browser, submits, or
-  writes `jobs.json`. Requires the `resume-intelligence` plugin (`resume-kit`).
+  "use the base as-is" or a per-job tailored file. Tailoring is **no-LLM**: it converts →
+  checks → injects only missing-but-true keywords (`inject-keywords`) and mirrors the
+  employer's exact wording for skills you already have (`update-terminology`) → exports,
+  learning a per-working-folder synonym/alias index along the way. Never opens a browser,
+  submits, or writes `jobs.json`. Requires the `resume-intelligence` plugin (`resume-kit`).
 
 **Safety invariant (all apply flows):** the agent never creates accounts, enters
 passwords, reads your email, solves CAPTCHAs, or enters payment details, and never

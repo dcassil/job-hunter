@@ -6,9 +6,11 @@ capabilities, the score gates, the once-per-variant structural fix, the
 skills-vetting question flow, the review modes, the best-effort fallback, and the
 defensive/degrade rules.
 
-All resume-kit capability names (`extract-resume`, `check-resume-ats`,
-`check-resume-job-match`, `identify-resume-gaps`, `build-candidate-evidence`,
-`align-resume`, `validate-resume-truth`, `export-resume`, and the rest) are cited
+All resume-kit capability names (`resume-to-json`, `job-to-json`,
+`check-ats-structure`, `check-resume-ats`, `check-resume-job-match`,
+`identify-resume-gaps`, `build-candidate-evidence`, `inject-keywords`,
+`update-terminology`, `manage-synonyms`, `validate-resume-truth`, `export-resume`,
+and the rest) are cited
 from [`../../../references/resume-kit.md`](../../../references/resume-kit.md) and
 its [capability map](../../../references/resume-kit.md#capability-map); they are
 not restated here. The freedom ceiling comes from
@@ -29,8 +31,9 @@ describes what happens between those two.
 ## The ordered pipeline
 
 Run these steps in order. Any step may short-circuit to a terminal outcome as
-noted; a resume-kit error or a `PROVIDER_NOT_CONFIGURED` result degrades per
-[Defensive / degrade rules](#defensive--degrade-rules).
+noted; a resume-kit error degrades per
+[Defensive / degrade rules](#defensive--degrade-rules). The content path is
+no-LLM end to end (no `align-resume`).
 
 ### Step 1 — Resume-kit gate
 
@@ -47,20 +50,38 @@ Resolve the working folder from `config.json` and locate the base resume file fo
 worker returns as `resume_used` (rotation-consistent for the caller), even when a
 tailored file is produced.
 
+### Step 2b — Convert once per job
+
+Convert the base resume to a `ResumeDocument` JSON **once per job** by dispatching
+the agent-driven `resume-to-json` skill as a subagent (not the raw `resume_extract`
+tool — no LLM provider is required), and convert the job posting to a
+`JobDescription` JSON via `job-to-json`. Reuse both across every subsequent call in
+this job's pipeline (match, gaps, terminology, inject, export), rather than
+re-converting per call (REQ-006). The whole content path from here is **no-LLM**.
+
+Also ensure the project alias index exists before the alias-aware calls run:
+`<working_dir>/resume-kit/config.json` (with `alias_file` → `learning/synonyms.json`)
+and the empty-shell `<working_dir>/resume-kit/learning/synonyms.json`
+(`{"version":1,"aliases":{},"justifications":{}}`) are created if absent. job-hunter
+writes ONLY the shell + pointer; `manage-synonyms` is the sole content writer
+(REQ-001; see [`data-contract.md`](../../../references/data-contract.md#resume-kit-alias-index)).
+`<alias_file>` below refers to this resolved path.
+
 ### Step 3 — Once-per-variant structural fix
 
 If `resume-prefs.json.variants[<resume_variant_id>].ats_fixed` is already `true`,
 skip this step entirely (REQ-003). Otherwise, run it at most once for this variant:
 
-1. `extract-resume` the base file, then `check-resume-ats` for structural document
-   issues (parse/format problems that hurt ATS legibility).
+1. Using the Step 2b `ResumeDocument`, run `check-ats-structure` for structural
+   document issues (parse/format problems that hurt ATS legibility). This is a
+   structure-only, job-independent check and takes **no** `alias_file`.
 2. If structural issues exist, produce a corrected artifact via `export-resume`
    and **show the user** the proposed structural fix.
 3. Replace the **base variant** only with explicit user confirmation, via the
    [`update-resumes`](../../update-resumes/SKILL.md) skill (the single writer of
    base variant files). Without confirmation, do not replace the base; proceed
    with the unfixed base.
-4. On a confirmed replace, retest with `check-resume-ats`, then set
+4. On a confirmed replace, retest with `check-ats-structure`, then set
    `variants[<resume_variant_id>].ats_fixed = true` in `resume-prefs.json` so this
    never runs again for that variant.
 
@@ -70,7 +91,8 @@ edit), but no content edits follow.
 
 ### Step 4 — Match-gate (skip if already strong)
 
-Run `check-resume-job-match` on the base resume against the job to get an `0–100`
+Run `check-resume-job-match` (with `alias_file = <alias_file>`, REQ-002) on the base
+resume against the job to get an `0–100`
 score; this is `original_score`. If `original_score >= 90`, **skip tailoring** and
 return `skipped-strong` with `resume_used = resume_variant_id`, no `tailored_path`,
 `final_score = original_score`, empty `changes_applied`, and no user interaction
@@ -82,7 +104,8 @@ no-edit return with `resume_used` = base and no tailored file.
 
 ### Step 5 — Identify gaps
 
-Run `identify-resume-gaps` with the base as the tailored input, the master resume
+Run `identify-resume-gaps` (with `alias_file = <alias_file>`, REQ-002) with the base
+as the tailored input, the master resume
 as the full source, and the job. It returns injectable keyword gaps (candidates to
 add) and non-injectable gaps (things genuinely missing that must not be
 fabricated).
@@ -104,24 +127,57 @@ Keywords the user has not confirmed as skills are never injected. This vetting i
 the only user interaction the worker performs that is independent of review mode —
 it protects the "never claim an unconfirmed skill" invariant.
 
+### Step 6a — Grow the project alias index (interactive / review-after only)
+
+Runs **only** in `interactive` / `review-after` review modes; **skipped entirely in
+`automatic`** (it needs user confirmation) (REQ-004). Collect the candidate
+`(missing keyword, resume term it may equal)` pairs from the Step 4/5 match and gap
+output, then **dispatch a subagent to resume-kit's `manage-synonyms` skill** with
+those candidates and the `<working_dir>/resume-kit/config.json` path.
+`manage-synonyms` proposes → truth-gates → asks the user → appends only
+user-confirmed, justified entries to `learning/synonyms.json` (it is the single
+writer; see [`resume-kit.md`](../../../references/resume-kit.md#terminology-mirroring--the-alias-index)).
+
+If any synonym was confirmed and appended, **re-run `check-resume-job-match` and
+`identify-resume-gaps` with `alias_file = <alias_file>`** so the freshly-confirmed
+synonyms lift the deterministic match and shrink the gap set on this same run. If no
+synonym is confirmed (or the user declines), continue with the existing scores. This
+step never fabricates: distinct skills are never aliased and scope is never broadened
+(REQ-005) — `manage-synonyms` enforces that.
+
 ### Step 7 — Build candidate evidence
 
 Run `build-candidate-evidence` from the **master resume plus the confirmed
-`skills`** to produce the evidence records the alignment and truth check are
-constrained by. Disclaimed skills are not evidence.
+`skills`** to produce the evidence records that the keyword-injection step (8a) and
+the truth check (Step 10) are constrained by. Disclaimed skills are not evidence.
 
-### Step 8 — Align
+### Step 8a — Inject missing-but-true keywords
 
-Run `align-resume` (evidence-constrained) to produce `aligned_resume`. In
-`interactive` review mode, request the aligner's human-in-loop behavior per
-resume-kit's own option surface. `align-resume` is an LLM path: on
-`PROVIDER_NOT_CONFIGURED` or an error, degrade per
-[Defensive / degrade rules](#defensive--degrade-rules).
+Dispatch resume-kit's `inject-keywords` skill as a subagent with the injectable gaps
+(Step 5, possibly re-scored in Step 6a) and the confirmed `skills` (Step 6), plus the
+Step 7 evidence. It emits discrete typed edits — `skill_add` (add a confirmed skill
+to the skills list) and `bullet_add` (weave a genuinely-held keyword into an existing
+bullet) — for keywords the candidate genuinely has (REQ-009). It **never** injects an
+unknown or disclaimed skill, and a non-injectable gap is left surfaced, never
+fabricated (REQ-005). These edits are candidates only; they are governed by Step 9.
+
+### Step 8b — Mirror employer wording
+
+Call `resume_suggest_terminology` (with `alias_file = <alias_file>`) via resume-kit's
+`update-terminology` capability. Each suggestion is an alias hit — a JD keyword the
+resume already satisfies under a different surface form — and becomes a `term_swap`
+candidate edit (`k8s → Kubernetes`) (REQ-003). For each `term_swap` that survives
+Step 9 gating and is accepted, apply it with `resume_align_terminology` (the engine
+truth-gates the swap regardless of acceptance). A JD keyword with **no** match is a
+gap (Step 5), never a mirror — it is never rewritten in (REQ-005). Applied swaps join
+`changes_applied` as `{ "type": "term_swap", "detail": "k8s → Kubernetes" }`.
 
 ### Step 9 — Classify, gate by freedom, order/auto-apply by prefs
 
-Diff `aligned_resume` against the base and classify each change into one typed edit
-per [`edit-classifier.md`](./edit-classifier.md). Then, in order:
+Steps 8a and 8b emit **already-typed** candidate edits (`skill_add`, `bullet_add`,
+`term_swap`); the classifier no longer diffs an opaque rewrite (see
+[`edit-classifier.md`](./edit-classifier.md)). Take the union of those candidate
+edits and, in order:
 
 1. **Drop** every edit above the freedom ceiling
    ([`degree-of-freedom.md`](./degree-of-freedom.md)) and every edit violating an
@@ -140,8 +196,8 @@ result from review is re-validated the same way before it ships.
 ### Step 11 — Apply and rescore
 
 Apply the surviving, permitted, truth-passing edits to the base to build the
-tailored resume, then rerun `check-resume-job-match` on the tailored result to get
-`final_score` (REQ-008).
+tailored resume, then rerun `check-resume-job-match` (with `alias_file = <alias_file>`)
+on the tailored result to get `final_score` (REQ-008).
 
 ### Step 12 — Rescore gate
 
@@ -214,12 +270,14 @@ The worker is defensive; it never fabricates a resume to recover from a failure:
   report the failure clearly and fall back to using the **base resume as-is** for
   this job (no tailored file, `resume_used` = base); never ship a partial or
   guessed tailoring.
-- **`PROVIDER_NOT_CONFIGURED` on an LLM path** (`align-resume`, or `extract-resume`
-  where a provider is required) → the deterministic parts of the pipeline (match,
-  ATS, gaps, evidence, truth, compare, export) still work, but content alignment
-  cannot run. Report that tailoring needs a configured provider and fall back to
-  the base resume as-is. This is a clear message plus a safe fallback, never a
-  fabricated resume (NFR-002, NFR-003).
+- **A terminology or index-growth step fails for one job** → skip that step with a
+  noted reason (attach the base, or ship the inject-only tailoring) and continue;
+  never abort the run and never fabricate (NFR-002).
+- **The content path is fully no-LLM.** There is no `align-resume` step and no
+  `PROVIDER_NOT_CONFIGURED` degrade branch: `resume-to-json` / `job-to-json`,
+  scoring, gaps, evidence, inject-keywords, terminology, truth, and export all run
+  without a provider. If a future LLM path is reintroduced, its degrade rule would
+  be added here.
 - **Any user-facing ask is declined / the user stops** → return with the base as
   `resume_used` and no tailored file; record whatever learning was legitimately
   gathered.
@@ -228,12 +286,16 @@ The worker is defensive; it never fabricates a resume to recover from a failure:
 
 - **Reads:** `<working_dir>/config.json` (discovery), `<working_dir>/resume/` (the
   base variant), `<working_dir>/resume-prefs.json` (skills, disclaimed, variant
-  flags, tallies), `<working_dir>/job-focus.md` (advisory), the job object passed
+  flags, tallies), `<working_dir>/resume-kit/config.json` +
+  `<working_dir>/resume-kit/learning/synonyms.json` (the project alias index, as
+  `alias_file`), `<working_dir>/job-focus.md` (advisory), the job object passed
   in, and the resume-kit capabilities.
 - **Writes:** `<working_dir>/resume-prefs.json` (skills / disclaimed_skills /
-  `variants[...].ats_fixed` / `edit_prefs`) and
-  `<working_dir>/resume/tailored/<job-id>.<ext>`; and — only on a confirmed
-  structural replace — the base variant via
-  [`update-resumes`](../../update-resumes/SKILL.md).
+  `variants[...].ats_fixed` / `edit_prefs`),
+  `<working_dir>/resume/tailored/<job-id>.<ext>`, and — only to bootstrap them if
+  absent — the empty-shell `<working_dir>/resume-kit/learning/synonyms.json` +
+  `resume-kit/config.json` pointer (never its content; `manage-synonyms` is the
+  sole content writer); and — only on a confirmed structural replace — the base
+  variant via [`update-resumes`](../../update-resumes/SKILL.md).
 - **Never writes:** `jobs.json` / `jobs.md` (REQ-011), and no `config.json` writes
   (the rotation pointer stays the caller's concern).
